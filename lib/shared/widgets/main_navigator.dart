@@ -68,6 +68,7 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
                           'assets/logo/Psystem_logo_no_icon-removebg.png',
                           height: 100,
                           fit: BoxFit.contain,
+
                         ),
                       ),
                     ),
