@@ -6,6 +6,7 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
   final bool isLoggedIn;
   final String? username;
 
+  /// Constructor
   const MainNavigator({
     super.key,
     this.isLoggedIn = false,
@@ -14,18 +15,18 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
+    /// Get screen dimensions
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate responsive sizes
+    /// Calculate responsive sizes
     final buttonPadding = screenWidth * 0.01; // 1% of screen width
     final fontSize = screenWidth * 0.012; // 1.2% of screen width
     final buttonSpacing = screenWidth * 0.005; // 0.5% of screen width
-    // AppBar
+    /// AppBar
     return AppBar(
       backgroundColor: const Color(0xFFE5E5E5),
-      automaticallyImplyLeading: false,
+      automaticallyImplyLeading: false, // Removes back button
       toolbarHeight: screenHeight * 0.08, // 8% of screen height
       title: LayoutBuilder(
         builder: (context, constraints) {
@@ -39,14 +40,14 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
                   isLoggedIn ? 'Logged in as $username' : '[Not Logged in...]',
                   style: TextStyle(
                     color: const Color(0xFF363636),
-                    fontSize: fontSize.clamp(14, 18), // Min 14, max 18
+                    fontSize: fontSize.clamp(18, 24), // Min 18, max 24
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
 
-              // Center - Logo with fixed state
-              // Center - Clickable Logo
+              /// Center - Logo with fixed state
+              /// Center - Clickable Logo
               Padding(
                 padding: const EdgeInsets.only(left: 275),
                 child: Tooltip(
@@ -76,7 +77,7 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // Right side - Buttons
+              /// Right side - Buttons
               Flexible(
                 flex: 5,
                 child: FittedBox(

@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+//import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:election_platform/config/routes.dart';
@@ -6,7 +6,7 @@ import 'package:election_platform/config/routes.dart';
 Future <void> main() async {
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  //await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
