@@ -1,25 +1,21 @@
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class VotingScreen extends StatefulWidget {
+  const VotingScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<VotingScreen> createState() => _VotingScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _VotingScreenState extends State<VotingScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
       appBar: MainNavigator(),
       body: Center(
-        child: Text('This is the home screen'),
+        child: Text('This is the voting screen'),
       ),
     );
   }
 }
-
-
-
-

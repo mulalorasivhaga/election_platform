@@ -50,5 +50,5 @@ git clone https://github.com/mulalorasivhaga/election_platform.git
 
 
 ## References
-Icon Generator [favicon.io](https://favicon.io/)
+Icon Generator: [favicon.io](https://favicon.io/)
 
