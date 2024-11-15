@@ -1,12 +1,12 @@
-//import 'package:firebase_core/firebase_core.dart';
+import 'package:election_platform/core/utils/firebase_config.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:election_platform/config/routes.dart';
+import 'features/auth/screens/login_screen.dart';
 
 Future <void> main() async {
 
-  // Initialize Firebase
-  //await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -20,8 +20,6 @@ class MyApp extends StatelessWidget {
       routes: Routes.getRoutes(),
       theme: ThemeData(
 
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
       ),
       home: const HomeScreen(), // HomeScreen is the first screen that will be displayed;
     );

@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
       child: const Text(
-        'Submit',
+        'Vote Now',
         style: TextStyle(fontSize: 24),
       ),
     );
