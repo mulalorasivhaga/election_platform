@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
       spacing: 32,
       runSpacing: 32,
       children: List.generate(
-        9,
+        3,
             (index) => _buildCandidateCard(
           itemWidth: itemWidth.clamp(280, 380),
           constraints: constraints,
@@ -132,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
           CircleAvatar(
             radius: isMobile ? 80 : 100,
             backgroundColor: const Color(0xFFE5E5E5),
+            foregroundColor: const Color(0xFF242F40),
             child: const Icon(Icons.person, size: 80),
           ),
           const SizedBox(height: 16),

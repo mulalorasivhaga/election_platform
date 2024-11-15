@@ -2,8 +2,8 @@ import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/reg_screen.dart';
-import '../features/voting/screens/voting_screen.dart';
 import '../features/results/screens/results_screen.dart';
+import '../features/voting/screens/voting_screen.dart';
 
 class Routes {
   // Define route names as constants
@@ -20,7 +20,7 @@ class Routes {
       login: (context) => const LoginScreen(),
       register: (context) => const RegScreen(),
       voting: (context) => const VotingScreen(),
-      results: (context) => const ResultsScreen(),
+      results: (context) => ElectionResultsScreen(),
     };
   }
 }

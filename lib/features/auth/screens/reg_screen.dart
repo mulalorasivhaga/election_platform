@@ -109,9 +109,10 @@ class _RegScreenState extends State<RegScreen> {
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       child: Column(
         children: [
-          _buildLogo(constraints),
           const SizedBox(height: 20),
           _buildFormFields(constraints),
+          const SizedBox(height: 50),
+          _buildLogo(constraints),
         ],
       ),
     );
