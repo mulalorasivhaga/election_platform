@@ -18,4 +18,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
       ),
     );
   }
+
+  // Helper method for header section
 }

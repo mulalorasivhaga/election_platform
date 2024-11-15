@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../config/routes.dart';
 
 class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
@@ -33,29 +32,17 @@ class MainNavigator extends StatelessWidget implements PreferredSizeWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left side - Login status
-              Flexible(
-                flex: 2,
-                child: Text(
-                  isLoggedIn ? 'Logged in as $username' : '[Not Logged in...]',
-                  style: TextStyle(
-                    color: const Color(0xFF363636),
-                    fontSize: fontSize.clamp(18, 24), // Min 18, max 24
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
 
-              /// Center - Logo with fixed state
-              /// Center - Clickable Logo
+              /// Left side - Logo with fixed state
+              /// Left side - Clickable Logo
               Padding(
-                padding: const EdgeInsets.only(left: 275),
+                padding: const EdgeInsets.only(left: 0),
                 child: Tooltip(
                   message: 'Click to go to Home',
                   child: Container(
                     constraints: const BoxConstraints(
-                      minWidth: 200,
-                      maxWidth: 200,
+                      minWidth: 250,
+                      maxWidth: 250,
                     ),
                     child: GestureDetector(
                       onTap: () {
