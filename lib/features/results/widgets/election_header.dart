@@ -1,14 +1,14 @@
-// lib/results/widgets/election_header.dart
-
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/results/utils/election_chart_color.dart';
 
 class ElectionHeader extends StatelessWidget {
   final DateTime lastUpdated;
+  final String headerText;
 
   const ElectionHeader({
     super.key,
     required this.lastUpdated,
+    required this.headerText,
   });
 
   @override
@@ -16,9 +16,9 @@ class ElectionHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
-          'National Results',
-          style: TextStyle(
+        Text(
+          headerText,
+          style: const TextStyle(
             fontSize: 72,
             fontWeight: FontWeight.bold,
             color: ElectionChartColors.textPrimary,

@@ -1,55 +1,115 @@
 # Election Platform
 
-A modern election platform built with Flutter and Firebase, designed to facilitate a transparent and efficient digital voting process.
+A web-based election platform built with Flutter and Firebase, designed to facilitate secure voter registration and management.
 
 ## Features
 
-- **User Authentication**
-- Secure email verification
-- Role-based access (Voters, Guests)
-- Real-time email validation using MailCheck.ai
+### Completed Features
+- User Registration System
+    - Email and password authentication
+    - South African ID validation
+    - Provincial selection
+    - Form validation and error handling
+    - Real-time data persistence with Firebase
+- Responsive Design
+    - Mobile-friendly layout
+    - Desktop optimization
+    - Dynamic form adjustments
 
-- **Voting System**
-- One-time voting mechanism
-- Real-time vote counting
-- Provincial results tracking
-- Secure transaction handling
+### Technical Stack
+- Frontend: Flutter Web
+- Backend: Firebase
+    - Authentication
+    - Firestore Database
+- State Management: Provider
 
-- **Real-time Analytics**
-- Live polling results
-- Voter turnout statistics
-- Provincial breakdown
-- Population percentage tracking
-
-## Screenshots
-
-[Add screenshots of your app here]
-
-## Tech Stack
-
-- Flutter for cross-platform development
-- Firebase for backend services
-- Cloud Firestore (NoSQL database)
-- Firebase Authentication
-- MailCheck.ai for email verification
-
-## Prerequisites
-
-- Flutter (latest version)
-- Dart SDK
-- Firebase CLI
-- Android Studio / VS Code
-- Git
-
-## Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/mulalorasivhaga/election_platform.git
+## Project Structure
+```
+lib/
+├── features/
+│   ├── auth/
+│   │   ├── models/
+│   │   │   └── user.dart
+│   │   ├── screens/
+│   │   │   └── reg_screen.dart
+│   │   └── services/
+│   │       └── auth_service.dart
+│   └── home/
+│       └── screens/
+│           └── home_screen.dart
+├── shared/
+│   └── widgets/
+│       └── main_navigator.dart
+└── main.dart
 ```
 
+## Setup and Installation
 
-## References
-- Icon Generator: [favicon.io](https://favicon.io/)
-- Firebase packages: [pub.dev](https://pub.dev/)
+### Prerequisites
+- Flutter (latest version)
+- Firebase CLI
+- Web browser (Chrome recommended for development)
 
+### Firebase Configuration
+1. Create a Firebase project
+2. Enable Authentication and Firestore
+3. Add Firebase configuration to your project
+4. Set up Firestore security rules
+
+### Getting Started
+1. Clone the repository
+```bash
+git clone [https://github.com/mulalorasivhaga/election_platform]
+```
+
+2. Install dependencies
+```bash
+flutter pub get
+```
+
+3. Run the application
+```bash
+flutter run -d chrome
+```
+
+## Testing
+### Form Validation Tests
+- Email format validation
+- Password strength requirements
+- South African ID number validation
+- Required field validation
+
+### Firebase Integration Tests
+- User authentication
+- Data persistence
+- Security rules validation
+
+## Current Progress
+✅ Completed:
+- Basic project setup
+- Firebase integration
+- Registration form UI
+- Form validation
+- User authentication
+- Firestore integration
+
+🔄 In Progress:
+- Security rules implementation
+- Error handling improvements
+- User data management
+
+📝 Planned Features:
+- Login functionality
+- Email verification
+- Password reset
+- User profile management
+- Admin dashboard
+
+## Contributing
+[Your contribution guidelines here]
+
+## License
+[Your license information here]
+
+## Contact
+[Your contact information here]

@@ -1,5 +1,7 @@
-import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/main_navigator.dart';
+import '../services/auth_service.dart';
+
 
 class RegScreen extends StatefulWidget {
   const RegScreen({super.key});
@@ -8,26 +10,79 @@ class RegScreen extends StatefulWidget {
   State<RegScreen> createState() => _RegScreenState();
 }
 
-/// This class builds the registration screen
 class _RegScreenState extends State<RegScreen> {
-  final _formKey = GlobalKey<FormState>(); // Form key
-  bool _passwordVisible = false; // Password visibility flag
+  final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+  bool _passwordVisible = false;
+  bool _isLoading = false;
 
-  // Form fields
-  String name = '', surname = '', email = '', idNumber = '';
-  String sex = 'Male', province = 'Western Cape';
-  String nationality = '', countryOfBirth = '', password = '';
-  DateTime? dateOfBirth;
+  // Form fields - only keep what's needed
+  String name = '';
+  String surname = '';
+  String email = '';
+  String idNumber = '';
+  String province = 'Western Cape';
+  String password = '';
 
-  // Province dropdown options
+  // Province list
   final List<String> provinces = [
-    'Western Cape', 'Eastern Cape', 'Northern Cape', 'North West',
-    'Free State', 'Gauteng', 'Limpopo', 'Mpumalanga', 'KwaZulu-Natal',
+    'Western Cape',
+    'Eastern Cape',
+    'Northern Cape',
+    'North West',
+    'Free State',
+    'Gauteng',
+    'Limpopo',
+    'Mpumalanga',
+    'KwaZulu-Natal',
   ];
-  // Sex Dropdown options
-  final List<String> sexOptions = ['Male', 'Female', 'Other'];
 
-  /// This method builds the registration screen
+// Email validation
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter an email address';
+    }
+    // Regular expression for email validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+// ID Number validation
+  String? _validateIdNumber(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter an ID number';
+    }
+    // South African ID number is 13 digits
+    final idRegex = RegExp(r'^\d{13}$');
+    if (!idRegex.hasMatch(value)) {
+      return 'Please enter a valid 13-digit ID number';
+    }
+    return null;
+  }
+
+// Password validation
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long';
+    }
+    // Check for at least one uppercase letter
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    // Check for at least one number
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+    return null;
+  }
+
+  /// Handle form submission
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,11 +116,10 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// This method builds the header section of the registration screen
+  /// Build header
   Widget _buildHeader(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
 
-    /// This method builds the header section of the registration screen
     return Column(
       children: [
         Text(
@@ -94,12 +148,12 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// This method builds the registration form
+  /// Build registration form
   Widget _buildRegistrationForm(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
-    final double containerWidth = isMobile ? constraints.maxWidth * 0.95 : constraints.maxWidth * 0.8;
+    final double containerWidth =
+        isMobile ? constraints.maxWidth * 0.95 : constraints.maxWidth * 0.8;
 
-    /// This method builds the registration form container
     return Container(
       width: containerWidth,
       decoration: BoxDecoration(
@@ -118,7 +172,7 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// This method builds the logo section of the registration form
+  /// Build logo
   Widget _buildLogo(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
     final double size = isMobile ? 150 : 200;
@@ -130,91 +184,141 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// This method builds the form fields of the registration form
+  /// Build form fields
   Widget _buildFormFields(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
     final double fieldPadding = isMobile ? 16 : 32;
 
-    /// This method builds the form fields of the registration form
     return Column(
       children: [
         if (!isMobile)
           _buildDesktopFormFields(fieldPadding)
         else
           _buildMobileFormFields(fieldPadding),
-
         SizedBox(height: isMobile ? 24 : 40),
         _buildSubmitButton(constraints),
       ],
     );
   }
 
-  /// This method builds the form fields for desktop screens
+  /// Build form fields for desktop
   Widget _buildDesktopFormFields(double padding) {
     return Column(
       children: [
+        // Name and Surname row
         Row(
           children: [
-            Expanded(child: _buildTextField(label: 'Name', icon: Icons.person, onChanged: (v) => setState(() => name = v))),
+            Expanded(
+              child: _buildTextField(
+                label: 'Name',
+                icon: Icons.person,
+                onChanged: (v) => setState(() => name = v),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Please enter your name' : null,
+              ),
+            ),
             SizedBox(width: padding),
-            Expanded(child: _buildTextField(label: 'Surname', icon: Icons.person_outline, onChanged: (v) => setState(() => surname = v))),
+            Expanded(
+              child: _buildTextField(
+                label: 'Surname',
+                icon: Icons.person_outline,
+                onChanged: (v) => setState(() => surname = v),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Please enter your surname' : null,
+              ),
+            ),
           ],
         ),
         SizedBox(height: padding),
-        _buildTextField(label: 'Email Address', icon: Icons.email, onChanged: (v) => setState(() => email = v)),
+        // Email
+        _buildTextField(
+          label: 'Email Address',
+          icon: Icons.email,
+          onChanged: (v) => setState(() => email = v),
+          validator: _validateEmail,
+        ),
         SizedBox(height: padding),
+        // ID Number
+        _buildTextField(
+          label: 'ID Number',
+          icon: Icons.credit_card,
+          onChanged: (v) => setState(() => idNumber = v),
+          validator: _validateIdNumber,
+        ),
+        SizedBox(height: padding),
+        // Province
+        _buildDropdownField(
+          label: 'Province',
+          value: province,
+          items: provinces,
+          onChanged: (v) => setState(() => province = v!),
+          icon: Icons.location_city,
+        ),
+        SizedBox(height: padding),
+        // Password
         _buildPasswordField(),
-        SizedBox(height: padding),
-        _buildTextField(label: 'ID Number', icon: Icons.credit_card, onChanged: (v) => setState(() => idNumber = v)),
-        SizedBox(height: padding),
-        Row(
-          children: [
-            Expanded(child: _buildDropdownField(label: 'Sex', value: sex, items: sexOptions, onChanged: (v) => setState(() => sex = v!), icon: Icons.person_outline)),
-            SizedBox(width: padding),
-            Expanded(child: _buildDateField()),
-          ],
-        ),
-        SizedBox(height: padding),
-        _buildDropdownField(label: 'Province', value: province, items: provinces, onChanged: (v) => setState(() => province = v!), icon: Icons.location_city),
       ],
     );
   }
 
-  /// This method builds the form fields for mobile screens
+  /// Build form fields for mobile
   Widget _buildMobileFormFields(double padding) {
     return Column(
       children: [
-        _buildTextField(label: 'Name', icon: Icons.person, onChanged: (v) => setState(() => name = v)),
+        _buildTextField(
+          label: 'Name',
+          icon: Icons.person,
+          onChanged: (v) => setState(() => name = v),
+          validator: (value) =>
+              value?.isEmpty ?? true ? 'Please enter your name' : null,
+        ),
         SizedBox(height: padding),
-        _buildTextField(label: 'Surname', icon: Icons.person_outline, onChanged: (v) => setState(() => surname = v)),
+        _buildTextField(
+          label: 'Surname',
+          icon: Icons.person_outline,
+          onChanged: (v) => setState(() => surname = v),
+          validator: (value) =>
+              value?.isEmpty ?? true ? 'Please enter your surname' : null,
+        ),
         SizedBox(height: padding),
-        _buildTextField(label: 'Email Address', icon: Icons.email, onChanged: (v) => setState(() => email = v)),
+        _buildTextField(
+          label: 'Email Address',
+          icon: Icons.email,
+          onChanged: (v) => setState(() => email = v),
+          validator: _validateEmail,
+        ),
+        SizedBox(height: padding),
+        _buildTextField(
+          label: 'ID Number',
+          icon: Icons.credit_card,
+          onChanged: (v) => setState(() => idNumber = v),
+          validator: _validateIdNumber,
+        ),
+        SizedBox(height: padding),
+        _buildDropdownField(
+          label: 'Province',
+          value: province,
+          items: provinces,
+          onChanged: (v) => setState(() => province = v!),
+          icon: Icons.location_city,
+        ),
         SizedBox(height: padding),
         _buildPasswordField(),
-        SizedBox(height: padding),
-        _buildTextField(label: 'ID Number', icon: Icons.credit_card, onChanged: (v) => setState(() => idNumber = v)),
-        SizedBox(height: padding),
-        _buildDropdownField(label: 'Sex', value: sex, items: sexOptions, onChanged: (v) => setState(() => sex = v!), icon: Icons.person_outline),
-        SizedBox(height: padding),
-        _buildDateField(),
-        SizedBox(height: padding),
-        _buildDropdownField(label: 'Province', value: province, items: provinces, onChanged: (v) => setState(() => province = v!), icon: Icons.location_city),
-        SizedBox(height: padding),
-        _buildTextField(label: 'Nationality', icon: Icons.flag, onChanged: (v) => setState(() => nationality = v)),
-        SizedBox(height: padding),
-        _buildTextField(label: 'Country of Birth', icon: Icons.public, onChanged: (v) => setState(() => countryOfBirth = v)),
       ],
     );
   }
 
-  /// This method builds a text field
+  /// Build text field
   Widget _buildTextField({
     required String label,
     required IconData icon,
     required Function(String) onChanged,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       onChanged: onChanged,
+      validator: validator ??
+          (value) => value?.isEmpty ?? true ? 'Please enter $label' : null,
       decoration: InputDecoration(
         labelText: label,
         icon: Icon(icon, color: const Color(0xFF363636)),
@@ -226,20 +330,21 @@ class _RegScreenState extends State<RegScreen> {
           borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
         ),
       ),
-      validator: (value) => value?.isEmpty ?? true ? 'Please enter $label' : null,
     );
   }
 
-  /// This method builds a password field
+  /// Build password field
   Widget _buildPasswordField() {
     return TextFormField(
       obscureText: !_passwordVisible,
       onChanged: (value) => setState(() => password = value),
+      validator: _validatePassword,
       decoration: InputDecoration(
         labelText: 'Password',
         icon: const Icon(Icons.lock, color: Color(0xFF363636)),
         suffixIcon: IconButton(
-          icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off, color: const Color(0xFF363636)),
+          icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off,
+              color: const Color(0xFF363636)),
           onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
         ),
         enabledBorder: const OutlineInputBorder(
@@ -250,11 +355,10 @@ class _RegScreenState extends State<RegScreen> {
           borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
         ),
       ),
-      validator: (value) => value?.isEmpty ?? true ? 'Please enter a password' : null,
     );
   }
 
-  /// This method builds a dropdown field
+  /// Build dropdown field
   Widget _buildDropdownField({
     required String label,
     required String value,
@@ -275,52 +379,19 @@ class _RegScreenState extends State<RegScreen> {
           borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
         ),
       ),
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
       onChanged: onChanged,
     );
   }
 
-  /// This method builds a date field
-  Widget _buildDateField() {
-    return TextFormField(
-      readOnly: true,
-      decoration: const InputDecoration(
-        labelText: 'Date of Birth',
-        icon: Icon(Icons.calendar_today, color: Color(0xFF363636)),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Color(0xFF363636), width: 2),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
-        ),
-      ),
-      controller: TextEditingController(
-        text: dateOfBirth?.toLocal().toString().split(' ')[0] ?? '',
-      ),
-      onTap: () async {
-        final pickedDate = await showDatePicker(
-          context: context,
-          initialDate: DateTime(2000),
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-        );
-        if (pickedDate != null) setState(() => dateOfBirth = pickedDate);
-      },
-      validator: (value) => dateOfBirth == null ? 'Please select your date of birth' : null,
-    );
-  }
-
-  /// This method builds the submit button
+  /// Build submit button
   Widget _buildSubmitButton(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
 
     return ElevatedButton(
-      onPressed: () {
-        if (_formKey.currentState!.validate()) {
-          // Add registration logic here
-        }
-      },
+      onPressed: _isLoading ? null : _handleRegistration,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFCCA43B),
         foregroundColor: Colors.white,
@@ -330,10 +401,62 @@ class _RegScreenState extends State<RegScreen> {
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
-      child: Text(
-        'Register',
-        style: TextStyle(fontSize: isMobile ? 20 : 24),
-      ),
+      child: _isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : Text(
+              'Register',
+              style: TextStyle(fontSize: isMobile ? 20 : 24),
+            ),
     );
+  }
+
+  /// Handle form submission
+  Future<void> _handleRegistration() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final (user, message) = await _authService.registerUser(
+        email: email,
+        password: password,
+        name: name,
+        surname: surname,
+        idNumber: idNumber,
+        province: province,
+      );
+
+      if (mounted) {
+        if (user != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/users');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

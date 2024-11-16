@@ -30,9 +30,12 @@ class ElectionResultsScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+
               children: [
+                /// This is the state class for the ElectionResultsScreen widget
                 ElectionHeader(
+                  headerText: 'National Election Results',
                   lastUpdated: DateTime.now(),
                 ),
                 const SizedBox(height: 24),
