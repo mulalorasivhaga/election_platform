@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:election_platform/features/home/screens/home_screen.dart';
+//import 'package:election_platform/features/user_dashboard/screens/user_dashboard.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/config/routes.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
 
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

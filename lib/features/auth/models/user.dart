@@ -7,6 +7,7 @@ class User {
   final String email;
   final String idNumber;
   final String province;
+  final String role; // Added role field
   final DateTime createdAt;
 
   User({
@@ -16,10 +17,10 @@ class User {
     required this.email,
     required this.idNumber,
     required this.province,
+    this.role = 'user', // Default role is 'user'
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Convert User object to a Map
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -28,11 +29,11 @@ class User {
       'email': email,
       'idNumber': idNumber,
       'province': province,
+      'role': role, // Include role in map
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  // Create User object from a Map
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       uid: map['uid'] ?? '',
@@ -41,13 +42,13 @@ class User {
       email: map['email'] ?? '',
       idNumber: map['idNumber'] ?? '',
       province: map['province'] ?? '',
+      role: map['role'] ?? 'user', // Parse role from map
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
           : null,
     );
   }
 
-  // Create a copy of the User with some updated fields
   User copyWith({
     String? uid,
     String? name,
@@ -55,6 +56,7 @@ class User {
     String? email,
     String? idNumber,
     String? province,
+    String? role, // Add role to copyWith
     DateTime? createdAt,
   }) {
     return User(
@@ -64,17 +66,16 @@ class User {
       email: email ?? this.email,
       idNumber: idNumber ?? this.idNumber,
       province: province ?? this.province,
+      role: role ?? this.role, // Include role in copyWith
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
-  // ToString method for debugging
   @override
   String toString() {
-    return 'User(uid: $uid, name: $name, surname: $surname, email: $email, idNumber: $idNumber, province: $province)';
+    return 'User(uid: $uid, name: $name, surname: $surname, email: $email, idNumber: $idNumber, province: $province, role: $role)';
   }
 
-  // Equality operator
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -85,10 +86,10 @@ class User {
         other.surname == surname &&
         other.email == email &&
         other.idNumber == idNumber &&
-        other.province == province;
+        other.province == province &&
+        other.role == role; // Include role in equality check
   }
 
-  // Hash code
   @override
   int get hashCode {
     return uid.hashCode ^
@@ -96,6 +97,7 @@ class User {
     surname.hashCode ^
     email.hashCode ^
     idNumber.hashCode ^
-    province.hashCode;
+    province.hashCode ^
+    role.hashCode; // Include role in hash
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/main_navigator.dart';
 import '../services/auth_service.dart';
 
+
 class RegScreen extends StatefulWidget {
   const RegScreen({super.key});
 
@@ -14,11 +15,6 @@ class _RegScreenState extends State<RegScreen> {
   final _authService = AuthService();
   bool _passwordVisible = false;
   bool _isLoading = false;
-  bool _isVerifyingEmail = false;
-  bool _isEmailValid = false;
-
-  // Regular expression for email validation
-  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
   // Form fields - only keep what's needed
   String name = '';
@@ -27,22 +23,6 @@ class _RegScreenState extends State<RegScreen> {
   String idNumber = '';
   String province = 'Western Cape';
   String password = '';
-
-  /// Validate email address
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter an email address';
-    }
-    // Regular expression for email validation
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) {
-      return 'Please enter a valid email address format';
-    }
-    if (!_isEmailValid) {
-      return 'Please verify this email address';
-    }
-    return null;
-  }
 
   // Province list
   final List<String> provinces = [
@@ -56,6 +36,51 @@ class _RegScreenState extends State<RegScreen> {
     'Mpumalanga',
     'KwaZulu-Natal',
   ];
+
+// Email validation
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter an email address';
+    }
+    // Regular expression for email validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+// ID Number validation
+  String? _validateIdNumber(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter an ID number';
+    }
+    // South African ID number is 13 digits
+    final idRegex = RegExp(r'^\d{13}$');
+    if (!idRegex.hasMatch(value)) {
+      return 'Please enter a valid 13-digit ID number';
+    }
+    return null;
+  }
+
+// Password validation
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long';
+    }
+    // Check for at least one uppercase letter
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    // Check for at least one number
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+    return null;
+  }
 
   /// Handle form submission
   @override
@@ -206,7 +231,12 @@ class _RegScreenState extends State<RegScreen> {
         ),
         SizedBox(height: padding),
         // Email
-        _buildEmailField(),
+        _buildTextField(
+          label: 'Email Address',
+          icon: Icons.email,
+          onChanged: (v) => setState(() => email = v),
+          validator: _validateEmail,
+        ),
         SizedBox(height: padding),
         // ID Number
         _buildTextField(
@@ -251,7 +281,12 @@ class _RegScreenState extends State<RegScreen> {
               value?.isEmpty ?? true ? 'Please enter your surname' : null,
         ),
         SizedBox(height: padding),
-        _buildEmailField(),
+        _buildTextField(
+          label: 'Email Address',
+          icon: Icons.email,
+          onChanged: (v) => setState(() => email = v),
+          validator: _validateEmail,
+        ),
         SizedBox(height: padding),
         _buildTextField(
           label: 'ID Number',
@@ -269,67 +304,6 @@ class _RegScreenState extends State<RegScreen> {
         ),
         SizedBox(height: padding),
         _buildPasswordField(),
-      ],
-    );
-  }
-
-  /// Build email field
-  Widget _buildEmailField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextFormField(
-          onChanged: (v) {
-            setState(() {
-              email = v;
-              _isEmailValid = false; // Reset validation when email changes
-            });
-          },
-          validator: _validateEmail,
-          decoration: InputDecoration(
-            labelText: 'Email Address',
-            icon: const Icon(Icons.email, color: Color(0xFF363636)),
-            suffixIcon: _isVerifyingEmail
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFFCCA43B),
-                    ),
-                  )
-                : _isEmailValid
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : null,
-            enabledBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF363636), width: 2),
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-            ),
-            focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
-            ),
-            errorBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-            ),
-            focusedErrorBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
-            ),
-          ),
-          onFieldSubmitted: (_) => _verifyEmail(),
-        ),
-        if (!_isEmailValid && email.isNotEmpty && emailRegex.hasMatch(email))
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: TextButton.icon(
-              onPressed: _verifyEmail,
-              icon: const Icon(Icons.verified_user, size: 16),
-              label: const Text('Verify Email'),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFCCA43B),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -405,6 +379,8 @@ class _RegScreenState extends State<RegScreen> {
           borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
         ),
       ),
+      dropdownColor: const Color(0xFFE5E5E5),
+      style: const TextStyle(color: Color(0xFF363636)),
       items: items
           .map((item) => DropdownMenuItem(value: item, child: Text(item)))
           .toList(),
@@ -441,73 +417,6 @@ class _RegScreenState extends State<RegScreen> {
               style: TextStyle(fontSize: isMobile ? 20 : 24),
             ),
     );
-  }
-
-  // Email validation
-  Future<void> _verifyEmail() async {
-    if (email.isEmpty || _isVerifyingEmail) return;
-
-    setState(() => _isVerifyingEmail = true);
-
-    try {
-      final (isValid, message) = await _authService.verifyEmail(email);
-
-      setState(() {
-        _isEmailValid = isValid;
-        _isVerifyingEmail = false;
-      });
-
-      if (!isValid && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isVerifyingEmail = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to verify email. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-// ID Number validation
-  String? _validateIdNumber(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter an ID number';
-    }
-    // South African ID number is 13 digits
-    final idRegex = RegExp(r'^\d{13}$');
-    if (!idRegex.hasMatch(value)) {
-      return 'Please enter a valid 13-digit ID number';
-    }
-    return null;
-  }
-
-// Password validation
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter a password';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    // Check for at least one uppercase letter
-    if (!value.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    // Check for at least one number
-    if (!value.contains(RegExp(r'[0-9]'))) {
-      return 'Password must contain at least one number';
-    }
-    return null;
   }
 
   /// Handle form submission

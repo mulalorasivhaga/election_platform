@@ -20,7 +20,7 @@ class ElectionResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5E5E5),
+      backgroundColor: const Color(0xFF242F40),
       appBar: const MainNavigator(),
       body: RefreshIndicator(
         onRefresh: () async {

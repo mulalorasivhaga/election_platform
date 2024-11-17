@@ -1,32 +1,20 @@
+// lib/widgets/manifesto_dialog.dart
+
 import 'package:flutter/material.dart';
+import '../models/candidate_model.dart';
+import 'package:logger/logger.dart';
 
-/// This is the state class for the ManifestoDialog widget
-class ManifestoDialog extends StatefulWidget {
-  final String candidateName;
-  final String candidateParty;
-  final String manifesto;
+class ManifestoDialog extends StatelessWidget {
+  final Candidate candidate;
+  final Logger _logger = Logger();
 
-  /// This is the constructor for the ManifestoDialog widget
-  const ManifestoDialog({
+  ManifestoDialog({
     super.key,
-    required this.candidateName,
-    required this.candidateParty,
-    required this.manifesto,
-  });
+    required this.candidate,
+  }) {
+    _logger.d('Initializing ManifestoDialog for ${candidate.name}');
+  }
 
-  /// This method creates the state for the ManifestoDialog widget
-  @override
-  State<ManifestoDialog> createState() => _ManifestoDialogState();
-}
-/// This is the state class for the ManifestoDialog widget
-class _ManifestoDialogState extends State<ManifestoDialog> {
-
-/// This method builds the ManifestoDialog widget
-  String candidateName = 'Candidate Name';
-  String candidateParty = 'Party Name';
-  String manifesto = 'This is the manifesto of the candidate';
-
-  /// This method builds the ManifestoDialog widget
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,10 +22,8 @@ class _ManifestoDialogState extends State<ManifestoDialog> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header section
-            _buildHeader(),
+            _buildHeader(context),
             const SizedBox(height: 20),
-            // Main login container
             _buildManifestoContainer(),
           ],
         ),
@@ -45,37 +31,56 @@ class _ManifestoDialogState extends State<ManifestoDialog> {
     );
   }
 
-
-  /// This method builds the header section of the ManifestoDialog widget
-  Widget _buildHeader() {
-    return Column(
+  /// This method builds the header of the dialog
+  Widget _buildHeader(BuildContext context) {
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 25.0),
-          child: Text(
-            candidateName,
-            style: const TextStyle(
-              color: Color(0xFFCCA43B),
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(top: 16, bottom: 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                candidate.name,
+                style: const TextStyle(
+                  color: Color(0xFFCCA43B),
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                candidate.partyName,
+                style: const TextStyle(
+                  color: Color(0xFFFFFFFF),
+                  fontSize: 18,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 10),
-        Text(
-          candidateParty,
-          style: const TextStyle(
-            color: Color(0xFFFFFFFF),
-            fontSize: 18,
+        Positioned(
+          top: 8,
+          right: 8,
+          child: IconButton(
+            icon: const Icon(
+              Icons.close,
+              color: Color(0xFFCCA43B),
+              size: 30,
+            ),
+            onPressed: () {
+              _logger.d('Closing manifesto dialog for ${candidate.name}');
+              Navigator.of(context).pop();
+            },
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  /// This method builds the manifesto container of the ManifestoDialog widget
   Widget _buildManifestoContainer() {
     return Center(
       child: Container(
@@ -89,13 +94,14 @@ class _ManifestoDialogState extends State<ManifestoDialog> {
             ),
             const SizedBox(height: 20),
             Text(
-              manifesto,
+              candidate.manifesto,
               style: const TextStyle(
                 color: Color(0xFFFFFFFF),
                 fontSize: 16,
               ),
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.left,
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

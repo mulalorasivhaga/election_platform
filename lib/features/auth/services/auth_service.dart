@@ -25,23 +25,21 @@ class AuthService {
     required String surname,
     required String idNumber,
     required String province,
+    String role = 'user', // Default role parameter
   }) async {
     try {
-      // First, verify the email
       final (isValid, message) = await _emailVerificationService.verifyEmail(email);
 
       if (!isValid) {
         return (null, message);
       }
 
-      // Proceed with registration if email is valid
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       if (userCredential.user != null) {
-        // Create User model
         final user = User(
           uid: userCredential.user!.uid,
           name: name,
@@ -49,10 +47,10 @@ class AuthService {
           email: email,
           idNumber: idNumber,
           province: province,
+          role: role, // Set the role
           createdAt: DateTime.now(),
         );
 
-        // Save user data to Firestore
         await _firestore
             .collection('users')
             .doc(userCredential.user!.uid)
@@ -103,6 +101,44 @@ class AuthService {
     }
   }
 
+  // Add method to check if user is admin
+  Future<bool> isUserAdmin() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
+
+      final docSnapshot = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!docSnapshot.exists) return false;
+
+      final userData = User.fromMap(docSnapshot.data()!);
+      return userData.role == 'admin';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Add method to update user role (admin only)
+  Future<String> updateUserRole(String userId, String newRole) async {
+    try {
+      // Check if current user is admin
+      if (!await isUserAdmin()) {
+        return 'Only admins can update user roles';
+      }
+
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .update({'role': newRole});
+
+      return 'Role updated successfully';
+    } catch (e) {
+      return 'Failed to update role: $e';
+    }
+  }
 
   /// Handle Firebase Auth errors
   String _handleFirebaseAuthError(firebase_auth.FirebaseAuthException e) {

@@ -1,6 +1,11 @@
+// lib/screens/home_screen.dart
+
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
+import '../services/candidate_service.dart';
+import '../models/candidate_model.dart';
 import '../widgets/manifesto_dialog.dart';
+import 'package:logger/logger.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -8,14 +13,23 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-/// This is the state class for the HomeScreen widget
-class _HomeScreenState extends State<HomeScreen> {
-  String candidateName = 'Candidate Name'; // Candidate name
-  String candidateParty = 'Party Name'; // Candidate party
-  String manifestoButton = 'View Manifesto'; // Manifesto button
-  String candidateImage = ''; // Candidate image
 
-  /// This method builds the HomeScreen widget
+/// This class is the state for the HomeScreen widget
+class _HomeScreenState extends State<HomeScreen> {
+  final CandidateService _candidateService = CandidateService();
+  final Logger _logger = Logger();
+
+  int _getCrossAxisCount(double width) {
+    if (width > 1200) {
+      return 3;  // Show 3 cards per row on large screens
+    } else if (width > 800) {
+      return 2;  // Show 2 cards per row on medium screens
+    } else {
+      return 1;  // Show 1 card per row on small screens
+    }
+  }
+
+  /// This method builds the header section
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// This method builds the header section of the HomeScreen widget
+  /// This method builds the header section
   Widget _buildHeader(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
 
@@ -79,40 +93,52 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-/// This method builds the candidate grid section of the HomeScreen widget
+  /// This method builds the candidate grid
   Widget _buildCandidateGrid(BoxConstraints constraints) {
-    final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
-    final itemWidth = (constraints.maxWidth - (32.0 * (crossAxisCount - 1))) / crossAxisCount;
-/// Return the candidate grid
-    return Wrap(
-      spacing: 32,
-      runSpacing: 32,
-      children: List.generate(
-        3,
-            (index) => _buildCandidateCard(
-          itemWidth: itemWidth.clamp(280, 380),
-          constraints: constraints,
-        ),
-      ),
+    return StreamBuilder<List<Candidate>>(
+      stream: _candidateService.getCandidates(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFCCA43B),
+            ),
+          );
+        }
+
+        final candidates = snapshot.data ?? [];
+        final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
+        final itemWidth = (constraints.maxWidth - (32.0 * (crossAxisCount - 1))) / crossAxisCount;
+
+        return Wrap(
+          spacing: 32,
+          runSpacing: 32,
+          alignment: WrapAlignment.center,
+          children: candidates.map((candidate) => _buildCandidateCard(
+            candidate: candidate,
+            itemWidth: itemWidth.clamp(280, 380),
+            constraints: constraints,
+          )).toList(),
+        );
+      },
     );
   }
 
-  /// This method returns the cross axis count based on the screen width
-  int _getCrossAxisCount(double width) {
-    if (width > 1200) return 3;
-    if (width > 800) return 3;
-    return 1;
-  }
-
-  /// This method builds the candidate card
+  /// This method calculates the number of columns based on the screen width
   Widget _buildCandidateCard({
+    required Candidate candidate,
     required double itemWidth,
     required BoxConstraints constraints,
   }) {
     final bool isMobile = constraints.maxWidth <= 600;
-/// Return the candidate card
+
     return Container(
       width: itemWidth,
+      height: 450, // Fixed height for all cards
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: const Color(0xFF242F40),
@@ -127,44 +153,65 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
             radius: isMobile ? 80 : 100,
+            backgroundImage: AssetImage(candidate.imagePath),
             backgroundColor: const Color(0xFFE5E5E5),
-            foregroundColor: const Color(0xFF242F40),
-            child: const Icon(Icons.person, size: 80),
           ),
-          const SizedBox(height: 16),
-          Text(
-            candidateName,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isMobile ? 20 : 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            candidateParty,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isMobile ? 16 : 18,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => _showManifestoDialog(constraints),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCCA43B),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              candidate.name,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isMobile ? 20 : 24,
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            child: const Text(
-              'View Manifesto',
-              style: TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              candidate.partyName,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isMobile ? 16 : 18,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _showManifestoDialog(constraints, candidate),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFCCA43B),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'View Manifesto',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],
@@ -173,7 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// This method shows the manifesto dialog
-  void _showManifestoDialog(BoxConstraints constraints) {
+  void _showManifestoDialog(BoxConstraints constraints, Candidate candidate) {
+    _logger.i('Opening manifesto dialog for candidate: ${candidate.name}');
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -184,13 +232,18 @@ class _HomeScreenState extends State<HomeScreen> {
               maxHeight: constraints.maxHeight * 0.8,
             ),
             child: ManifestoDialog(
-              candidateName: candidateName,
-              candidateParty: candidateParty,
-              manifesto: '',
+              candidate: candidate,
             ),
           ),
         );
       },
     );
+  }
+
+  /// This method disposes the candidate service
+  @override
+  void dispose() {
+    _candidateService.dispose();
+    super.dispose();
   }
 }
