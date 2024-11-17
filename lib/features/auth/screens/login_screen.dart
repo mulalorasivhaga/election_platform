@@ -1,6 +1,8 @@
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,10 +12,79 @@ class LoginScreen extends StatefulWidget {
 }
 /// This is the state class for the LoginScreen widget
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>(); // Form key
-  bool _passwordVisible = false; // Password visibility flag
-  String userEmail = ''; // User email
-  String userPassword = ''; // User password
+  final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+  bool _passwordVisible = false;
+  bool _isLoading = false;
+  String userEmail = '';
+  String userPassword = '';
+
+  /// This method validates the email address
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your email';
+    }
+    // Basic email format validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+  /// This method validates the password
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
+  /// This method handles the login process
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final (user, message) = await _authService.loginUser(
+        email: userEmail,
+        password: userPassword,
+      );
+
+      if (mounted) {
+        if (user != null) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate to home/dashboard
+          Navigator.pushReplacementNamed(context, '/users');
+        } else {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   /// This method builds the LoginScreen widget
   @override
@@ -103,6 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
             hintText: 'Please enter your Email Address',
             icon: Icons.email,
             onChanged: (value) => setState(() => userEmail = value),
+            validator: _validateEmail,  // Add the validator here
             constraints: constraints,
           ),
           SizedBox(height: isMobile ? 24 : 40),
@@ -124,10 +196,10 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required Function(String) onChanged,
     required BoxConstraints constraints,
+    String? Function(String?)? validator,
   }) {
     final bool isMobile = constraints.maxWidth <= 600;
 
-    /// Return the input field section
     return Column(
       children: [
         Text(
@@ -145,6 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: TextFormField(
             onChanged: onChanged,
+            validator: validator,
             style: const TextStyle(color: Color(0xFF363636)),
             decoration: InputDecoration(
               hintText: hintText,
@@ -155,6 +228,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               focusedBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
+              ),
+              errorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.red, width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              focusedErrorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.red, width: 2),
               ),
             ),
           ),
@@ -184,6 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: TextFormField(
             onChanged: (value) => setState(() => userPassword = value),
+            validator: _validatePassword,
             obscureText: !_passwordVisible,
             style: const TextStyle(color: Color(0xFF363636)),
             decoration: InputDecoration(
@@ -195,6 +276,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               focusedBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
+              ),
+              errorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.red, width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              focusedErrorBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.red, width: 2),
               ),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -213,16 +301,12 @@ class _LoginScreenState extends State<LoginScreen> {
   /// This method builds the submit button section of the LoginScreen widget
   Widget _buildSubmitButton(BoxConstraints constraints) {
     final bool isMobile = constraints.maxWidth <= 600;
-/// Return the submit button section
+
     return ElevatedButton(
-      onPressed: () {
-        if (_formKey.currentState!.validate()) {
-          // Add login logic
-        }
-      },
+      onPressed: _isLoading ? null : _handleLogin,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFCCA43B),
-        foregroundColor: const Color(0xFFFFFFFF),
+        foregroundColor: Colors.white,
         padding: EdgeInsets.symmetric(
           horizontal: isMobile ? 32 : 50,
           vertical: isMobile ? 8 : 10,
@@ -231,12 +315,22 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(5),
         ),
       ),
-      child: Text(
-        'Submit',
+      child: _isLoading
+          ? const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          color: Colors.white,
+          strokeWidth: 2,
+        ),
+      )
+          : Text(
+        'Login',
         style: TextStyle(fontSize: isMobile ? 20 : 24),
       ),
     );
   }
+}
 
   /// This method builds the logo section of the LoginScreen widget
   Widget _buildLogo(BoxConstraints constraints) {
@@ -250,4 +344,3 @@ class _LoginScreenState extends State<LoginScreen> {
       height: size,
     );
   }
-}

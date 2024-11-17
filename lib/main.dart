@@ -1,7 +1,7 @@
 // lib/main.dart
+import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:election_platform/config/routes.dart';
 
 Future<void> main() async {
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFFCCA43B),
         scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       ),
-      home: const HomeScreen(),
+      home: const HomeScreen(), // change to HomeScreen() to see the home screen
     );
   }
 }

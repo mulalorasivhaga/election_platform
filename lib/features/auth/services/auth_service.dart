@@ -1,4 +1,6 @@
 //Task 5: Firebase Authentication
+// connects to Firebase Authentication to register a new user with email and password
+// and to log in an existing user with email and password.
 // lib/features/auth/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -66,14 +68,59 @@ class AuthService {
     }
   }
 
+  /// Log in user with email and password
+  Future<(User?, String)> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      // Attempt to sign in
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user != null) {
+        // Fetch user data from Firestore
+        final docSnapshot = await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (docSnapshot.exists) {
+          // Convert Firestore data to User model
+          final userData = User.fromMap(docSnapshot.data()!);
+          return (userData, 'Success');
+        } else {
+          return (null, 'User data not found');
+        }
+      }
+      return (null, 'Login failed');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      return (null, _handleFirebaseAuthError(e));
+    } catch (e) {
+      return (null, 'An unexpected error occurred: $e');
+    }
+  }
+
+
+  /// Handle Firebase Auth errors
   String _handleFirebaseAuthError(firebase_auth.FirebaseAuthException e) {
     switch (e.code) {
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Wrong password provided.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many failed login attempts. Please try again later.';
+      case 'invalid-email':
+        return 'The email address is invalid.';
       case 'weak-password':
         return 'The password provided is too weak.';
       case 'email-already-in-use':
         return 'An account already exists for this email.';
-      case 'invalid-email':
-        return 'The email address is invalid.';
       default:
         return 'Authentication error: ${e.message}';
     }
