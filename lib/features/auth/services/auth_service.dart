@@ -1,13 +1,20 @@
+//Task 5: Firebase Authentication
 // lib/features/auth/services/auth_service.dart
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
+import 'email_verification_service.dart';
 
 class AuthService {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final EmailVerificationService _emailVerificationService = EmailVerificationService();
 
+  // Add public method to verify email
+  Future<(bool, String)> verifyEmail(String email) async {
+    return await _emailVerificationService.verifyEmail(email);
+  }
 
   Future<(User?, String)> registerUser({
     required String email,
@@ -18,7 +25,14 @@ class AuthService {
     required String province,
   }) async {
     try {
-      // Create authentication user
+      // First, verify the email
+      final (isValid, message) = await _emailVerificationService.verifyEmail(email);
+
+      if (!isValid) {
+        return (null, message);
+      }
+
+      // Proceed with registration if email is valid
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
