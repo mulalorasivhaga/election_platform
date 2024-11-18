@@ -34,7 +34,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-
   bool _passwordVisible = false;
   bool _isLoading = false;
   String userEmail = '';

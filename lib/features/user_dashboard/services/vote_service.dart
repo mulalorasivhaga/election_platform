@@ -3,133 +3,103 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/vote_model.dart';
+import '../utils/id_validator.dart';
+import '../utils/vote_exception.dart';
 import 'package:logger/logger.dart';
 
 class VoteService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
-  final Logger _logger = Logger();
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
 
-  // Check if SA ID has already voted
-  Future<bool> hasSAIdVoted(String saId) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('votes')
-          .where('saId', isEqualTo: saId)
-          .get();
-
-      return querySnapshot.docs.isNotEmpty;
-    } catch (e) {
-      _logger.e('Error checking if SA ID voted: $e');
-      rethrow;
-    }
-  }
-
-  // Check if user has already voted
   Future<bool> hasUserVoted(String userId) async {
     try {
-      final voteDoc = await _firestore
-          .collection('votes')
-          .doc(userId)
-          .get();
+      if (userId.isEmpty) {
+        _logger.w('hasUserVoted called with empty userId');
+        return false;
+      }
 
+      final voteDoc = await _firestore.collection('votes').doc(userId).get();
       return voteDoc.exists;
     } catch (e) {
-      _logger.e('Error checking if user voted: $e');
-      rethrow;
+      _logger.e('Error checking vote status: $e');
+      return false;
     }
   }
 
-  // Cast a vote
   Future<String> castVote({
+    required String userId,
     required String saId,
     required String candidateId,
   }) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        _logger.e('No authenticated user found');
-        return 'User not authenticated';
+      if (!IdValidator.isValidSouthAfricanId(saId)) {
+        throw const VoteException('Invalid ID number format');
       }
 
-      // Check if SA ID has already voted
-      if (await hasSAIdVoted(saId)) {
-        _logger.w('SA ID has already voted: $saId');
-        return 'This ID number has already been used to vote';
+      if (userId.isEmpty || candidateId.isEmpty) {
+        throw const VoteException('Missing required fields');
       }
 
-      // Check if user has already voted
-      if (await hasUserVoted(user.uid)) {
-        _logger.w('User has already voted: ${user.uid}');
-        return 'You have already cast your vote';
+      final hasVoted = await hasUserVoted(userId);
+      if (hasVoted) {
+        throw const VoteException('Double voting detected');
       }
 
-      // Verify that SA ID exists in users collection
-      final userDoc = await _firestore
-          .collection('users')
-          .where('idNumber', isEqualTo: saId)
-          .get();
+      return await _firestore.runTransaction((transaction) async {
+        final voteRef = _firestore.collection('votes').doc(userId);
+        final candidateRef = _firestore.collection('candidates').doc(candidateId);
 
-      if (userDoc.docs.isEmpty) {
-        _logger.w('SA ID not found in users collection: $saId');
-        return 'Invalid ID number';
-      }
+        final voteDoc = await transaction.get(voteRef);
+        if (voteDoc.exists) {
+          throw const VoteException('Vote already cast');
+        }
 
-      // Create vote
-      final vote = Vote(
-        userId: user.uid,
-        saId: saId,
-        candidateId: candidateId,
-        timestamp: DateTime.now(),
-      );
+        final candidateDoc = await transaction.get(candidateRef);
+        if (!candidateDoc.exists) {
+          throw const VoteException('Invalid candidate selection');
+        }
 
-      // Save vote using user's UID as document ID
-      await _firestore
-          .collection('votes')
-          .doc(user.uid)
-          .set(vote.toMap());
+        transaction.set(voteRef, {
+          'userId': userId,
+          'candidateId': candidateId,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
-      _logger.i('Vote cast successfully for SA ID: $saId');
-      return 'Vote cast successfully';
+        transaction.update(candidateRef, {
+          'voteCount': FieldValue.increment(1)
+        });
+
+        return 'Vote recorded successfully';
+      });
+    } on VoteException catch (e) {
+      _logger.w('Vote validation failed: ${e.message}');
+      return e.message;
     } catch (e) {
-      _logger.e('Error casting vote: $e');
-      return 'Error casting vote: $e';
+      _logger.e('Voting error occurred', error: e);
+      return 'An error occurred while processing your vote';
     }
   }
 
-  // Get user's vote
   Future<Vote?> getUserVote() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return null;
 
-      final voteDoc = await _firestore
-          .collection('votes')
-          .doc(user.uid)
-          .get();
-
+      final voteDoc = await _firestore.collection('votes').doc(user.uid).get();
       if (!voteDoc.exists) return null;
 
       return Vote.fromMap(voteDoc.data()!);
     } catch (e) {
       _logger.e('Error getting user vote: $e');
-      return null;
-    }
-  }
-
-  // Get vote by SA ID
-  Future<Vote?> getVoteBySAId(String saId) async {
-    try {
-      final querySnapshot = await _firestore
-          .collection('votes')
-          .where('saId', isEqualTo: saId)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) return null;
-
-      return Vote.fromMap(querySnapshot.docs.first.data());
-    } catch (e) {
-      _logger.e('Error getting vote by SA ID: $e');
       return null;
     }
   }

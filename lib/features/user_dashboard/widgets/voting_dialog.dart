@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-
 import '../../home/models/candidate_model.dart';
 import '../../home/services/candidate_service.dart';
 import '../services/vote_service.dart';
+import '../utils/vote_exception.dart';
+import '../../auth/models/user.dart' as auth;
 
 class VotingDialog extends StatefulWidget {
-  const VotingDialog({super.key});
+  final auth.User currentUser;
+
+  const VotingDialog({super.key, required this.currentUser});
 
   @override
   State<VotingDialog> createState() => _VotingDialogState();
@@ -18,7 +21,15 @@ class _VotingDialogState extends State<VotingDialog> {
   final TextEditingController _idController = TextEditingController();
   final VoteService _voteService = VoteService();
   final CandidateService _candidateService = CandidateService();
-  final Logger _logger = Logger();
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
 
   String? _selectedCandidateId;
   bool _isLoading = false;
@@ -27,68 +38,113 @@ class _VotingDialogState extends State<VotingDialog> {
   @override
   void initState() {
     super.initState();
+    _idController.text = widget.currentUser.idNumber;
     _checkVoteStatus();
   }
 
   Future<void> _checkVoteStatus() async {
-    final hasVoted = await _voteService.hasUserVoted(_idController.text);
-    if (hasVoted && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You have already cast your vote')),
-      );
-      Navigator.of(context).pop();
+    try {
+      final hasVoted = await _voteService.hasUserVoted(widget.currentUser.uid);
+      if (hasVoted && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You have already cast your vote')),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      _logger.e('Error checking vote status: $e');
     }
   }
 
-/// This method submits the vote
   Future<void> _submitVote() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        // Get selected candidate's party name for the success message
-        final selectedCandidate = _candidates
-            .firstWhere((candidate) => candidate.id == _selectedCandidateId);
+    if (!_formKey.currentState!.validate()) return;
 
-        final result = await _voteService.castVote(
-          saId: _idController.text,
-          candidateId: _selectedCandidateId!,
-        );
+    setState(() => _isLoading = true);
 
-        if (mounted) {
-          if (result == 'Vote cast successfully') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    'Vote successfully cast for ${selectedCandidate.partyName}'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.of(context).pop(true);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        _logger.e('Error submitting vote: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error submitting vote: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+    try {
+      if (_idController.text != widget.currentUser.idNumber) {
+        throw const VoteException('ID number does not match your profile');
       }
+
+      final result = await _voteService.castVote(
+        userId: widget.currentUser.uid,
+        saId: _idController.text,
+        candidateId: _selectedCandidateId!,
+      );
+
+      if (result == 'Vote recorded successfully' && mounted) {
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vote cast successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw VoteException(result);
+      }
+    } on VoteException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+
+  /// This method builds the voting form
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF242F40),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 20),
+                _buildIdField(),
+                const SizedBox(height: 20),
+                _buildCandidateDropdown(),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildSubmitButton(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// This method builds the header section
@@ -259,76 +315,29 @@ class _VotingDialogState extends State<VotingDialog> {
         ),
         child: _isLoading
             ? const SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 2,
-          ),
-        )
-            : const Text(
-          'Submit Vote',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// This method builds the voting form
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF242F40),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                _buildIdField(),
-                const SizedBox(height: 20),
-                _buildCandidateDropdown(),
-                const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSubmitButton(),
-                    ),
-                  ],
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
                 ),
-              ],
-            ),
-          ),
-        ),
+              )
+            : const Text(
+                'Submit Vote',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
 
+  /// This method disposes the controller
   @override
   void dispose() {
+    _logger.i('🔚 Disposing voting dialog');
     _idController.dispose();
     super.dispose();
   }

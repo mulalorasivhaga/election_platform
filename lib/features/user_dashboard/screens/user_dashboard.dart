@@ -1,33 +1,60 @@
 import 'package:election_platform/shared/widgets/user_navigator.dart';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../auth/models/user.dart' as auth;
 import '../widgets/voting_dialog.dart';
 
 class UserDashboard extends StatelessWidget {
   const UserDashboard({super.key});
 
-  String get title => 'User Dashboard';
+  Future<auth.User?> _getCurrentUser() async {
+    final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return null;
 
-  void _showVotingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent closing by tapping outside
-      builder: (BuildContext context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: const Color(0xFF242F40),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const VotingDialog(),
-        ),
-      ),
-    );
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .get();
+
+    if (!userDoc.exists) return null;
+    return auth.User.fromMap(userDoc.data()!);
   }
 
+
+  /// This method shows the voting dialog
+  void _showVotingDialog(BuildContext context) async {
+    final currentUser = await _getCurrentUser();
+
+    if (currentUser != null) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.height * 0.8,
+              decoration: BoxDecoration(
+                color: const Color(0xFF242F40),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: VotingDialog(currentUser: currentUser),
+            ),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        Navigator.pushNamed(context, '/login');
+      }
+    }
+  }
+
+
+  /// This method builds the user dashboard screen
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,6 +103,7 @@ class UserDashboard extends StatelessWidget {
     );
   }
 
+  /// This method builds a card widget
   Widget _buildCard({
     required String title,
     required VoidCallback onTap,
