@@ -1,5 +1,6 @@
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 import '../services/auth_service.dart';
 
@@ -14,6 +15,26 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
+
+  /// Logger instance
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 3,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
+
+  @override
+  void dispose() {
+    _logger.d('Disposing LoginScreen');
+    super.dispose();
+  }
+
+
+
   bool _passwordVisible = false;
   bool _isLoading = false;
   String userEmail = '';
@@ -22,34 +43,42 @@ class _LoginScreenState extends State<LoginScreen> {
   /// This method validates the email address
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
+      _logger.w('Email validation failed: Empty email');
       return 'Please enter your email';
     }
-    // Basic email format validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value)) {
+      _logger.w('Email validation failed: Invalid format - $value');
       return 'Please enter a valid email address';
     }
+    _logger.d('Email validation passed: $value');
     return null;
   }
 
   /// This method validates the password
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
+      _logger.w('Password validation failed: Empty password');
       return 'Please enter your password';
     }
     if (value.length < 6) {
+      _logger.w('Password validation failed: Too short');
       return 'Password must be at least 6 characters';
     }
+    _logger.d('Password validation passed');
     return null;
   }
+
 
   /// This method handles the login process
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
+      _logger.w('Form validation failed');
       return;
     }
 
     setState(() => _isLoading = true);
+    _logger.i('Starting login process for user: $userEmail');
 
     try {
       final (user, message) = await _authService.loginUser(
@@ -57,20 +86,20 @@ class _LoginScreenState extends State<LoginScreen> {
         password: userPassword,
       );
 
+      _logger.i('Login response: User: ${user?.uid}, Message: $message');
+
       if (mounted) {
         if (user != null) {
-          // Show success message
+          _logger.i('Login successful for user: ${user.uid}');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Login successful!'),
               backgroundColor: Colors.green,
             ),
           );
-
-          // Navigate to home/dashboard
           Navigator.pushReplacementNamed(context, '/users');
         } else {
-          // Show error message
+          _logger.w('Login failed: $message');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
@@ -78,6 +107,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         }
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Login error', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {

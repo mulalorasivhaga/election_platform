@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/main_navigator.dart';
 import '../services/auth_service.dart';
+import '../services/email_verification_service.dart';
+import 'package:logger/logger.dart';
 
 
 class RegScreen extends StatefulWidget {
@@ -11,12 +13,31 @@ class RegScreen extends StatefulWidget {
 }
 
 class _RegScreenState extends State<RegScreen> {
+
+  // Initialize services and controllers
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
+  final _emailVerificationService = EmailVerificationService();
+
+  // Logger
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 3,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
+
+
+// State variables
   bool _passwordVisible = false;
   bool _isLoading = false;
+  bool _isEmailVerified = false;
+  bool _isVerifyingEmail = false;
 
-  // Form fields - only keep what's needed
+  // Form fields
   String name = '';
   String surname = '';
   String email = '';
@@ -37,12 +58,17 @@ class _RegScreenState extends State<RegScreen> {
     'KwaZulu-Natal',
   ];
 
+  @override
+  void dispose() {
+    _logger.d('Disposing RegScreen');
+    super.dispose();
+  }
+
 // Email validation
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter an email address';
     }
-    // Regular expression for email validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value)) {
       return 'Please enter a valid email address';
@@ -55,7 +81,6 @@ class _RegScreenState extends State<RegScreen> {
     if (value == null || value.isEmpty) {
       return 'Please enter an ID number';
     }
-    // South African ID number is 13 digits
     final idRegex = RegExp(r'^\d{13}$');
     if (!idRegex.hasMatch(value)) {
       return 'Please enter a valid 13-digit ID number';
@@ -71,18 +96,124 @@ class _RegScreenState extends State<RegScreen> {
     if (value.length < 6) {
       return 'Password must be at least 6 characters long';
     }
-    // Check for at least one uppercase letter
     if (!value.contains(RegExp(r'[A-Z]'))) {
       return 'Password must contain at least one uppercase letter';
     }
-    // Check for at least one number
     if (!value.contains(RegExp(r'[0-9]'))) {
       return 'Password must contain at least one number';
     }
     return null;
   }
 
-  /// Handle form submission
+  /// Verify email address
+  Future<void> _verifyEmail() async {
+    if (email.isEmpty) return;
+
+    setState(() => _isVerifyingEmail = true);
+    _logger.i('Starting email verification for: $email');
+
+    try {
+      final (isValid, message) = await _emailVerificationService.verifyEmail(email);
+      _logger.i('Email verification response: Valid: $isValid, Message: $message');
+
+      setState(() {
+        _isEmailVerified = isValid;
+        _isVerifyingEmail = false;
+      });  if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: isValid ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Email verification failed', error: e, stackTrace: stackTrace);
+      setState(() => _isVerifyingEmail = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to verify email. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+
+  // Registration handler
+  Future<void> _handleRegistration() async {
+    if (!_formKey.currentState!.validate()) {
+      _logger.w('Form validation failed');
+      return;
+    }
+
+    if (!_isEmailVerified) {
+      _logger.w('Attempted registration with unverified email');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please verify your email first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    _logger.i('Starting registration process for user: $email');
+
+    try {
+      final (user, message) = await _authService.registerUser(
+        email: email,
+        password: password,
+        name: name,
+        surname: surname,
+        idNumber: idNumber,
+        province: province,
+      );
+
+      _logger.i('Registration response: User: ${user?.uid}, Message: $message');
+
+      if (mounted) {
+        if (user != null) {
+          _logger.i('Registration successful for user: ${user.uid}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        } else {
+          _logger.w('Registration failed: $message');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      _logger.e('Registration error', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+      /// Handle form submission
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,12 +362,7 @@ class _RegScreenState extends State<RegScreen> {
         ),
         SizedBox(height: padding),
         // Email
-        _buildTextField(
-          label: 'Email Address',
-          icon: Icons.email,
-          onChanged: (v) => setState(() => email = v),
-          validator: _validateEmail,
-        ),
+        _buildEmailField(),
         SizedBox(height: padding),
         // ID Number
         _buildTextField(
@@ -281,12 +407,7 @@ class _RegScreenState extends State<RegScreen> {
               value?.isEmpty ?? true ? 'Please enter your surname' : null,
         ),
         SizedBox(height: padding),
-        _buildTextField(
-          label: 'Email Address',
-          icon: Icons.email,
-          onChanged: (v) => setState(() => email = v),
-          validator: _validateEmail,
-        ),
+        _buildEmailField(),
         SizedBox(height: padding),
         _buildTextField(
           label: 'ID Number',
@@ -333,6 +454,55 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
+  /// Build email field with verification button
+  Widget _buildEmailField() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            onChanged: (v) => setState(() {
+              email = v;
+              _isEmailVerified = false;
+            }),
+            validator: _validateEmail,
+            decoration: InputDecoration(
+              labelText: 'Email Address',
+              icon: const Icon(Icons.email, color: Color(0xFF363636)),
+              suffixIcon: _isEmailVerified
+                  ? const Icon(Icons.check_circle, color: Colors.green)
+                  : null,
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF363636), width: 2),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFCCA43B), width: 2),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: (email.isEmpty || _isVerifyingEmail) ? null : _verifyEmail,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFCCA43B),
+            foregroundColor: Colors.white,
+          ),
+          child: _isVerifyingEmail
+              ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          )
+              : const Text('Verify'),
+        ),
+      ],
+    );
+  }
+
   /// Build password field
   Widget _buildPasswordField() {
     return TextFormField(
@@ -358,7 +528,7 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// Build dropdown field
+  /// Build dropdown field for provinces
   Widget _buildDropdownField({
     required String label,
     required String value,
@@ -419,46 +589,4 @@ class _RegScreenState extends State<RegScreen> {
     );
   }
 
-  /// Handle form submission
-  Future<void> _handleRegistration() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final (user, message) = await _authService.registerUser(
-        email: email,
-        password: password,
-        name: name,
-        surname: surname,
-        idNumber: idNumber,
-        province: province,
-      );
-
-      if (mounted) {
-        if (user != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacementNamed(context, '/login');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
 }

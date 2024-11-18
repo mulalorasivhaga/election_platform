@@ -7,6 +7,8 @@ class EmailVerificationService {
   static const String _baseUrl = 'https://api.mailcheck.ai';
   static const String _apiKey = '83vHe93CYWPrzeaNCKthPUE080VpXYXP'; // API key
 
+
+
   // List of explicitly allowed email domains
   final Set<String> _allowedDomains = {
     'gmail.com',
