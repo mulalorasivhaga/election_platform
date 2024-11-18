@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFFCCA43B),
         scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       ),
-      home: const UserDashboard(), //change to home screen when completed with User Dashboard
+      home:  HomeScreen(), //change to home screen when completed with User Dashboard
     );
   }
 }

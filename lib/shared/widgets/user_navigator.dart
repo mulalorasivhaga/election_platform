@@ -72,13 +72,6 @@ class UserNavigator extends StatelessWidget implements PreferredSizeWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // _buildButton(
-                      //   // go to results screen
-                      //   'View Results',
-                      //       () => Navigator.pushNamed(context, Routes.results),
-                      //   buttonPadding,
-                      //   fontSize,
-                      // ),
                       SizedBox(width: buttonSpacing),
                       _buildButton(
                         // go to results screen

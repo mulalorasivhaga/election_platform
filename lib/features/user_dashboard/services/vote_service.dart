@@ -3,7 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/vote_model.dart';
-import '../utils/id_validator.dart';
 import '../utils/vote_exception.dart';
 import 'package:logger/logger.dart';
 
@@ -41,10 +40,6 @@ class VoteService {
     required String candidateId,
   }) async {
     try {
-      if (!IdValidator.isValidSouthAfricanId(saId)) {
-        throw const VoteException('Invalid ID number format');
-      }
-
       if (userId.isEmpty || candidateId.isEmpty) {
         throw const VoteException('Missing required fields');
       }
@@ -104,3 +99,4 @@ class VoteService {
     }
   }
 }
+

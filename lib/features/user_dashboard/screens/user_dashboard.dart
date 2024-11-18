@@ -1,3 +1,6 @@
+import 'package:logger/logger.dart';
+import '../../../config/routes.dart';
+import '../widgets/profile_view_dialog.dart';
 import 'package:election_platform/shared/widgets/user_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -5,95 +8,135 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/models/user.dart' as auth;
 import '../widgets/voting_dialog.dart';
 
+
 class UserDashboard extends StatelessWidget {
-  const UserDashboard({super.key});
+  // Logger instance
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
+  UserDashboard({super.key});
 
+  /// Get the current user from Firestore
   Future<auth.User?> _getCurrentUser() async {
-    final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) return null;
+    try {
+      _logger.i('🔍 Fetching current user...');
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(firebaseUser.uid)
-        .get();
+      if (firebaseUser == null) {
+        _logger.w('⚠️ No authenticated user found');
+        return null;
+      }
 
-    if (!userDoc.exists) return null;
-    return auth.User.fromMap(userDoc.data()!);
+      _logger.d('📱 Fetching user document for UID: ${firebaseUser.uid}');
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        _logger.w('⚠️ User document not found in Firestore');
+        return null;
+      }
+
+      _logger.i('✅ User data retrieved successfully');
+      return auth.User.fromMap(userDoc.data()!);
+    } catch (e) {
+      _logger.e('❌ Error fetching user data: $e');
+      return null;
+    }
   }
 
-
-  /// This method shows the voting dialog
+  /// Show the voting dialog
   void _showVotingDialog(BuildContext context) async {
     final currentUser = await _getCurrentUser();
+    if (currentUser != null && context.mounted) {
+      _showDialog(context, VotingDialog(currentUser: currentUser));
+    } else if (context.mounted) {
+      Navigator.pushNamed(context, '/login');
+    }
+  }
 
-    if (currentUser != null) {
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => Dialog(
-            backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              height: MediaQuery.of(context).size.height * 0.8,
-              decoration: BoxDecoration(
-                color: const Color(0xFF242F40),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: VotingDialog(currentUser: currentUser),
-            ),
-          ),
-        );
-      }
-    } else {
-      if (context.mounted) {
+  /// function to show the profile dialog
+  void _showProfileDialog(BuildContext context) async {
+    try {
+      _logger.i('🔄 Opening profile view dialog...');
+      final currentUser = await _getCurrentUser();
+
+      if (currentUser != null && context.mounted) {
+        _logger.i('👤 Showing profile for user: ${currentUser.idNumber}');
+        _showDialog(context, ProfileViewDialog(currentUser: currentUser));
+      } else if (context.mounted) {
+        _logger.w('⚠️ User not authenticated, redirecting to login');
         Navigator.pushNamed(context, '/login');
+      }
+    } catch (e) {
+      _logger.e('❌ Error showing profile dialog: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load profile')),
+        );
       }
     }
   }
 
+/// function to show customized dialog box
+  void _showDialog(BuildContext context, Widget dialogContent) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: const Color(0xFF242F40),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: dialogContent,
+        ),
+      ),
+    );
+  }
 
-  /// This method builds the user dashboard screen
+
+  /// Build the user dashboard
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const UserNavigator(),
       body: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 100.0, horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 24.0),
         child: Center(
           child: GridView(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
+              crossAxisCount: 3,
+              crossAxisSpacing: 24.0,
+              mainAxisSpacing: 24.0,
+              childAspectRatio: 1.5, // Adjust this value to control card height
+              mainAxisExtent: 300, // Fixed height for each card
             ),
             children: [
               _buildCard(
                 title: 'View\nProfile',
-                onTap: () {
-                  //Dialog to view user profile details
-                },
+                onTap: () => _showProfileDialog(context),
                 color: const Color(0xFF242F40),
               ),
               _buildCard(
-                title: 'Edit\nProfile',
-                onTap: () {
-                  //Dialog to enable user edit profile
-                },
-                color: const Color(0xFF242F40),
-                isDisabled: true,
-              ),
-              _buildCard(
-                title: 'Your\nVote',
-                onTap: () {
-                  //Dialog to show users vote
-                },
+                title: 'View\nResults',
+                onTap: ()  => Navigator.pushNamed(context, Routes.results),
                 color: const Color(0xFF242F40),
               ),
               _buildCard(
                 title: 'Vote',
-                onTap: () => _showVotingDialog(context), // Show voting dialog
+                onTap: () => _showVotingDialog(context),
                 color: const Color(0xFFCCA43B),
               ),
             ],
@@ -103,7 +146,7 @@ class UserDashboard extends StatelessWidget {
     );
   }
 
-  /// This method builds a card widget
+  /// Build the card widget
   Widget _buildCard({
     required String title,
     required VoidCallback onTap,

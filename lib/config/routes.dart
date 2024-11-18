@@ -21,7 +21,7 @@ class Routes {
       login: (context) => const LoginScreen(),
       register: (context) => const RegScreen(),
       results: (context) => ElectionResultsScreen(),
-      users: (context) => const UserDashboard(),
+      users: (context) => UserDashboard(),
     };
   }
 }

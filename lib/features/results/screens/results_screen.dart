@@ -1,5 +1,6 @@
 // lib/results/election_results_screen.dart
 import 'package:election_platform/shared/widgets/main_navigator.dart';
+import 'package:election_platform/shared/widgets/results_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/results/widgets/election_header.dart';
 import 'package:election_platform/features/results/widgets/stats_row/election_stats_row.dart';
@@ -21,7 +22,7 @@ class ElectionResultsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF242F40),
-      appBar: const MainNavigator(),
+      appBar: const DisplayResultsNavigator(),
       body: RefreshIndicator(
         onRefresh: () async {
           // Implement refresh logic
