@@ -1,12 +1,12 @@
-// lib/results/widgets/election_stats_row/results_distribution_card.dart
-
+// lib/widgets/election_stats_row/results_distribution_card.dart
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:election_platform/features/results/utils/election_chart_color.dart';
-import 'package:election_platform/features/results/models/candidate_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../utils/election_chart_color.dart';
 import '../../utils/election_chart_utils.dart';
+import '../../models/election_model.dart';
 
-class ResultsDistributionCard extends StatelessWidget {
+class ResultsDistributionCard extends ConsumerWidget {
   final List<ElectionCandidate> candidates;
 
   const ResultsDistributionCard({
@@ -14,9 +14,9 @@ class ResultsDistributionCard extends StatelessWidget {
     required this.candidates,
   });
 
-  /// Builds the card with the national results distribution
+  /// Builds the card with the national results distribution.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -49,7 +49,7 @@ class ResultsDistributionCard extends StatelessWidget {
                   ),
                   Expanded(
                     flex: 2,
-                    child: _buildLegend(),
+                    child: _buildLegend(candidates),
                   ),
                 ],
               ),
@@ -60,8 +60,8 @@ class ResultsDistributionCard extends StatelessWidget {
     );
   }
 
-  /// Builds the legend for the chart
-  Widget _buildLegend() {
+  /// Builds the legend for the chart.
+  Widget _buildLegend(List<ElectionCandidate> candidates) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
@@ -81,7 +81,7 @@ class ResultsDistributionCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${candidates[index].party} (${candidates[index].votes}%)',
+                  '${candidates[index].party} ',
                   style: const TextStyle(
                     fontSize: 12,
                     color: ElectionChartColors.textSecondary,

@@ -3,9 +3,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/results/utils/election_chart_color.dart';
-import 'package:election_platform/features/results/models/candidate_model.dart';
+import 'package:election_platform/features/results/models/election_model.dart';
 
-/// Utility class for creating chart data for election results
 class ElectionChartUtils {
   static List<PieChartSectionData> getVoterTurnoutSections({
     required double votedPercentage,
@@ -23,7 +22,6 @@ class ElectionChartUtils {
           color: Colors.white,
         ),
       ),
-      /// Add the section for the not voted percentage
       PieChartSectionData(
         value: 100 - votedPercentage,
         title: '${(100 - votedPercentage).toStringAsFixed(1)}%',
@@ -37,29 +35,38 @@ class ElectionChartUtils {
       ),
     ];
   }
-
-  /// Returns the sections for the candidate results pie chart
+  /// Returns a list of PieChartSectionData objects representing the results of the election.
   static List<PieChartSectionData> getCandidateResultsSections({
     required List<ElectionCandidate> candidates,
     double radius = 80,
   }) {
+    // Calculate total votes
+    final totalVotes = candidates.fold(0.0, (sum, candidate) => sum + candidate.votes);
+
+    // Normalize percentages to ensure they sum to 100%
     return List.generate(
       candidates.length,
-          (index) => PieChartSectionData(
-        value: candidates[index].votes.toDouble(),
-        title: '${candidates[index].votes}%',
-        color: ElectionChartColors.getPartyColor(index),
-        radius: radius,
-        titleStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
+          (index) {
+        final normalizedPercentage = totalVotes > 0
+            ? (candidates[index].votes / totalVotes * 100)
+            : 0.0;
+
+        return PieChartSectionData(
+          value: normalizedPercentage,
+          title: '${normalizedPercentage.toStringAsFixed(1)}%',
+          color: ElectionChartColors.getPartyColor(index),
+          radius: radius,
+          titleStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        );
+      },
     );
   }
 
-  /// Returns the bar chart data for the provincial results
+  /// Returns a BarChartData object representing the results of the election.
   static BarChartData getProvinceBarChartData({
     required Map<String, double> provincialData,
     double maxY = 100,
@@ -94,7 +101,7 @@ class ElectionChartUtils {
     );
   }
 
-  /// Returns the bar groups for the provincial data
+  /// Returns a list of BarChartGroupData objects representing the results of the election.
   static List<BarChartGroupData> _getBarGroups(Map<String, double> provincialData) {
     return List.generate(
       provincialData.length,

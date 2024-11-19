@@ -1,7 +1,7 @@
 // lib/services/vote_service.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import '../../home/models/candidate_model.dart';
 import '../models/vote_model.dart';
 import '../utils/vote_exception.dart';
 import 'package:logger/logger.dart';
@@ -19,6 +19,25 @@ class VoteService {
     ),
   );
 
+  /// Stream of all candidates
+  Stream<List<Candidate>> watchCandidates() {
+    _logger.i('👀 Starting to watch candidates');
+    return _firestore
+        .collection('candidates')
+        .snapshots()
+        .map((snapshot) {
+      _logger.i('📥 Received candidates snapshot: ${snapshot.docs.length} documents');
+      return snapshot.docs
+          .map((doc) => Candidate.fromMap(doc.data(), doc.id))
+          .toList();
+    })
+        .handleError((error) {
+      _logger.e('❌ Error watching candidates', error: error);
+      return [];
+    });
+  }
+
+  /// Function to check if a user has voted
   Future<bool> hasUserVoted(String userId) async {
     try {
       if (userId.isEmpty) {
@@ -34,6 +53,7 @@ class VoteService {
     }
   }
 
+  /// Function to cast a vote
   Future<String> castVote({
     required String userId,
     required String saId,
@@ -66,7 +86,7 @@ class VoteService {
         transaction.set(voteRef, {
           'userId': userId,
           'candidateId': candidateId,
-          'timestamp': FieldValue.serverTimestamp(),
+
         });
 
         transaction.update(candidateRef, {
@@ -83,7 +103,7 @@ class VoteService {
       return 'An error occurred while processing your vote';
     }
   }
-
+/// Function to get the vote cast by a user
   Future<Vote?> getUserVote() async {
     try {
       final user = _auth.currentUser;
@@ -98,5 +118,62 @@ class VoteService {
       return null;
     }
   }
-}
 
+/// Stream of all votes
+  Stream<Map<String, int>> watchCandidateVoteCounts() {
+    _logger.i('👀 Starting to watch vote counts');
+    return _firestore.collection('candidates')
+        .snapshots()
+        .map((snapshot) {
+      _logger.i('📥 Received vote counts snapshot: ${snapshot.docs.length} documents');
+      final voteCounts = <String, int>{};
+      for (var doc in snapshot.docs) {
+        voteCounts[doc.id] = doc.data()['voteCount'] ?? 0;
+      }
+      return voteCounts;
+    })
+        .handleError((error) {
+      _logger.e('❌ Error watching vote counts', error: error);
+      return {};
+    });
+  }
+
+  Stream<int> watchTotalVotes() {
+    _logger.i('👀 Starting to watch total votes');
+    return _firestore.collection('votes')
+        .snapshots()
+        .map((snapshot) {
+      _logger.i('📊 Total votes count: ${snapshot.docs.length}');
+      return snapshot.docs.length;
+    })
+        .handleError((error) {
+      _logger.e('❌ Error watching total votes', error: error);
+      return 0;
+    });
+  }
+
+  Stream<Map<String, Map<String, int>>> watchProvinceVotes() {
+    _logger.i('👀 Starting to watch province votes');
+    return _firestore.collection('votes')
+        .snapshots()
+        .map((snapshot) {
+      _logger.i('📥 Received province votes snapshot: ${snapshot.docs.length} documents');
+      final provinceVotes = <String, Map<String, int>>{};
+      try {
+        for (var doc in snapshot.docs) {
+          final vote = Vote.fromMap(doc.data());
+          provinceVotes.putIfAbsent(vote.province, () => {});
+          provinceVotes[vote.province]![vote.candidateId] =
+              (provinceVotes[vote.province]![vote.candidateId] ?? 0) + 1;
+        }
+      } catch (e) {
+        _logger.e('Error processing province votes', error: e);
+      }
+      return provinceVotes;
+    })
+        .handleError((error) {
+      _logger.e('❌ Error watching province votes', error: error);
+      return {};
+    });
+  }
+}

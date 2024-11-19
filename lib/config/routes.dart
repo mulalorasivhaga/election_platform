@@ -2,7 +2,7 @@ import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/reg_screen.dart';
-import '../features/results/screens/results_screen.dart';
+import '../features/results/screens/election_results_screen.dart';
 import '../features/user_dashboard/screens/user_dashboard.dart';
 
 
@@ -20,7 +20,7 @@ class Routes {
       initial: (context) => const HomeScreen(),  // initial screen
       login: (context) => const LoginScreen(),
       register: (context) => const RegScreen(),
-      results: (context) => ElectionResultsScreen(),
+      results: (context) => const ElectionResultsScreen(),
       users: (context) => UserDashboard(),
     };
   }

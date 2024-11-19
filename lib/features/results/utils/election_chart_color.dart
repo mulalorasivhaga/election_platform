@@ -18,12 +18,13 @@ class ElectionChartColors {
   static const Color cardBorder = Color(0xFFEEEEEE);
 
   // Party colors
-  static const List<Color> partyColors = [
-    Color(0xFF2196F3), // Blue
-    Color(0xFFF44336), // Red
-    Color(0xFF4CAF50), // Green
-    Color(0xFFFF9800), // Orange
-    Color(0xFF9C27B0), // Purple
+  static List<Color> partyColors = [
+    Colors.red,
+    Colors.deepOrangeAccent,
+    Colors.blueGrey,
+    Colors.blueAccent,
+    Colors.yellow[700]!,
+    Colors.green,
   ];
 
   // Gradient colors

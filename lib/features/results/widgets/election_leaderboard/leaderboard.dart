@@ -1,7 +1,7 @@
 // lib/results/widgets/election_leaderboard/leaderboard.dart
 
 import 'package:flutter/material.dart';
-import 'package:election_platform/features/results/models/candidate_model.dart';
+import 'package:election_platform/features/results/models/election_model.dart';
 import 'package:election_platform/features/results/utils/election_chart_color.dart';
 import 'package:election_platform/features/results/widgets/election_leaderboard/leaderboard_candidate_item.dart';
 
@@ -15,7 +15,19 @@ class ElectionLeaderboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sortedCandidates = [...candidates]
+    // Calculate total votes and normalize percentages
+    final totalVotes = candidates.fold(0.0, (sum, c) => sum + c.votes);
+    final normalizedCandidates = candidates.map((c) {
+      final normalizedVotes = totalVotes > 0 ? (c.votes / totalVotes * 100) : 0.0;
+      return ElectionCandidate(
+        id: c.id,
+        name: c.name,
+        party: c.party,
+        votes: normalizedVotes,
+      );
+    }).toList();
+
+    final sortedCandidates = [...normalizedCandidates]
       ..sort((a, b) => b.votes.compareTo(a.votes));
 
     return Card(

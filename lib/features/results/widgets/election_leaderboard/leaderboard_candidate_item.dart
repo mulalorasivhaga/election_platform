@@ -1,7 +1,7 @@
 // lib/results/widgets/election_leaderboard/leaderboard_candidate_item.dart
 
 import 'package:flutter/material.dart';
-import 'package:election_platform/features/results/models/candidate_model.dart';
+import 'package:election_platform/features/results/models/election_model.dart';
 import 'package:election_platform/features/results/utils/election_chart_color.dart';
 
 class LeaderboardCandidateItem extends StatelessWidget {
@@ -16,6 +16,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
     this.isTopThree = false,
   });
 
+  /// Builds the candidate leaderboard item
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -37,6 +38,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
     );
   }
 
+  /// Returns the position widget
   Widget _buildPosition() {
     return Container(
       width: 32,
@@ -61,6 +63,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
     );
   }
 
+  /// Returns the candidate information widget
   Widget _buildCandidateInfo() {
     return Expanded(
       child: Column(
@@ -88,6 +91,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
     );
   }
 
+/// Returns the vote percentage widget
   Widget _buildVotePercentage() {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -101,7 +105,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        '${candidate.votes}%',
+        '${candidate.votes.toStringAsFixed(2)}%',
         style: TextStyle(
           color: isTopThree
               ? ElectionChartColors.primary

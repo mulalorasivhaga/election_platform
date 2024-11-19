@@ -44,6 +44,9 @@ dependencies:
   js : ^0.6.7
   http: ^1.2.2
   logger: ^2.5.0
+  flutter_riverpod: ^2.6.1
+  async: ^2.4.9
+  rxdart: ^0.28.0
 
 
 dev_dependencies:

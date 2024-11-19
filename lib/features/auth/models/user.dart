@@ -87,7 +87,7 @@ class User {
         other.email == email &&
         other.idNumber == idNumber &&
         other.province == province &&
-        other.role == role; // Include role in equality check
+        other.role == role;
   }
 
   @override

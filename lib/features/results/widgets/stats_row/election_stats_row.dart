@@ -1,9 +1,8 @@
 // lib/results/widgets/election_stats_row/election_stats_row.dart
 
 import 'package:flutter/material.dart';
-import 'package:election_platform/features/results/models/candidate_model.dart';
+import 'package:election_platform/features/results/models/election_model.dart';
 import 'package:election_platform/features/results/widgets/stats_row/turnout_stat_card.dart';
-import 'candidate_count_card.dart';
 import 'results_distribution_card.dart';
 
 
@@ -47,12 +46,12 @@ class ElectionStatsRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            child: CandidateCountCard(
-              candidates: candidates,
-              totalParties: totalParties,
-            ),
-          ),
+          // Expanded(
+          //   child: CandidateCountCard(
+          //     candidates: candidates,
+          //     totalParties: totalParties,
+          //   ),
+          // ),
           const SizedBox(width: 16),
           Expanded(
             child: ResultsDistributionCard(
@@ -67,22 +66,18 @@ class ElectionStatsRow extends StatelessWidget {
   Widget _buildNarrowLayout() {
     return Column(
       children: [
-        TurnoutStatsCard(
-          votedPercentage: votedPercentage,
-          totalVoters: totalVoters,
-        ),
-        const SizedBox(height: 16),
-        CandidateCountCard(
-          candidates: candidates,
-          totalParties: totalParties,
-        ),
-        const SizedBox(height: 16),
         SizedBox(
           height: 300,
           child: ResultsDistributionCard(
             candidates: candidates,
           ),
         ),
+        const SizedBox(height: 16),
+        TurnoutStatsCard(
+          votedPercentage: votedPercentage,
+          totalVoters: totalVoters,
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }

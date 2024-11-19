@@ -1,9 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:election_platform/config/routes.dart';
-import 'package:election_platform/features/user_dashboard/screens/user_dashboard.dart'; // use to dev user dashboard without login
-import 'package:election_platform/features/home/screens/home_screen.dart'; //move initial screen to home screen
+import 'package:election_platform/features/home/screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'config/routes.dart'; //move initial screen to home screen
 
 Future<void> main() async {
   try {
@@ -23,7 +23,10 @@ Future<void> main() async {
     );
 
 
-    runApp(const MyApp());
+    runApp(const ProviderScope (
+        child: MyApp()
+        )
+    );
   } catch (e) {
     debugPrint('Initialization error: $e');
     runApp(const MaterialApp(home: Center(child: CircularProgressIndicator())));
@@ -43,7 +46,7 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFFCCA43B),
         scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       ),
-      home:  HomeScreen(), //change to home screen when completed with User Dashboard
+      home:  const HomeScreen(), //change to home screen when completed with User Dashboard
     );
   }
 }
