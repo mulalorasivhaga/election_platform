@@ -1,39 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import '../../../shared/providers/service_providers.dart';
 import '../../home/models/candidate_model.dart';
-import '../../home/services/candidate_service.dart';
-import '../services/vote_service.dart';
+import 'package:election_platform/shared/services/candidate_service.dart';
 import '../utils/vote_exception.dart';
-import '../../auth/models/user.dart' as auth;
+import '../../auth/models/user_model.dart' as auth;
 
-class VotingDialog extends StatefulWidget {
+class VotingDialog extends ConsumerStatefulWidget {
   final auth.User currentUser;
-
   const VotingDialog({super.key, required this.currentUser});
 
   @override
-  State<VotingDialog> createState() => _VotingDialogState();
+  ConsumerState<VotingDialog> createState() => _VotingDialogState();
 }
 
-class _VotingDialogState extends State<VotingDialog> {
+class _VotingDialogState extends ConsumerState<VotingDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _idController = TextEditingController();
-  final VoteService _voteService = VoteService();
+  final Logger _logger = Logger();
   final CandidateService _candidateService = CandidateService();
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  List<Candidate> _candidates = [];
 
   String? _selectedCandidateId;
   bool _isLoading = false;
-  List<Candidate> _candidates = [];
 
   @override
   void initState() {
@@ -44,7 +35,8 @@ class _VotingDialogState extends State<VotingDialog> {
 
   Future<void> _checkVoteStatus() async {
     try {
-      final hasVoted = await _voteService.hasUserVoted(widget.currentUser.uid);
+      final voteService = ref.read(voteServiceProvider);
+      final hasVoted = await voteService.hasUserVoted(widget.currentUser.uid);
       if (hasVoted && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You have already cast your vote')),
@@ -57,7 +49,12 @@ class _VotingDialogState extends State<VotingDialog> {
   }
 
   Future<void> _submitVote() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _selectedCandidateId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all required fields')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -66,22 +63,35 @@ class _VotingDialogState extends State<VotingDialog> {
         throw const VoteException('ID number does not match your profile');
       }
 
-      final result = await _voteService.castVote(
-        userId: widget.currentUser.uid,
-        saId: _idController.text,
-        candidateId: _selectedCandidateId!,
-      );
+      final voteService = ref.read(voteServiceProvider);
 
-      if (result == 'Vote recorded successfully' && mounted) {
-        Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vote cast successfully!'),
-            backgroundColor: Colors.green,
-          ),
+      // Wrap the castVote call in a try-catch block
+      try {
+        await voteService.castVote(
+          userId: widget.currentUser.uid,
+          candidateId: _selectedCandidateId!,
+          province: widget.currentUser.province,
         );
-      } else {
-        throw VoteException(result);
+
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vote cast successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        _logger.e('Error casting vote: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error casting vote: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } on VoteException catch (e) {
       if (mounted) {
@@ -92,10 +102,23 @@ class _VotingDialogState extends State<VotingDialog> {
           ),
         );
       }
+    } catch (e) {
+      _logger.e('Unexpected error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An unexpected error occurred: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
+
 
 
   /// This method builds the voting form

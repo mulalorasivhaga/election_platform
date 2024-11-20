@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/results_navigator.dart';
-import '../services/election_results_provider.dart';
+import 'package:election_platform/shared/providers/election_results_provider.dart';
 import '../widgets/election_header.dart';
 import '../widgets/stats_row/election_stats_row.dart';
 import '../widgets/election_leaderboard/leaderboard.dart';
@@ -12,14 +12,23 @@ class ElectionResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final resultsAsync = ref.watch(formattedResultsProvider);
+    final resultsAsync = ref.watch(electionResultsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF242F40),
       appBar: const DisplayResultsNavigator(),
       body: resultsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
+          ),
+        ),
+        error: (err, stack) => Center(
+          child: Text(
+            'Error: $err',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
         data: (results) {
           return SingleChildScrollView(
             child: Padding(

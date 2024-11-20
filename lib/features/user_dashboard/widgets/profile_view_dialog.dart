@@ -1,6 +1,6 @@
 // lib/features/user_dashboard/widgets/profile_view_dialog.dart
 import 'package:flutter/material.dart';
-import '../../auth/models/user.dart' as auth;
+import '../../auth/models/user_model.dart' as auth;
 
 class ProfileViewDialog extends StatelessWidget {
   final auth.User currentUser;

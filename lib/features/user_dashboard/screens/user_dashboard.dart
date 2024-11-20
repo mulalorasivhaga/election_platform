@@ -5,7 +5,7 @@ import 'package:election_platform/shared/widgets/user_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../auth/models/user.dart' as auth;
+import '../../auth/models/user_model.dart' as auth;
 import '../widgets/voting_dialog.dart';
 
 

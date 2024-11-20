@@ -1,4 +1,4 @@
-// lib/models/candidate.dart
+// lib/features/home/models/candidate_model.dart
 
 class Candidate {
   final String id;
@@ -15,7 +15,7 @@ class Candidate {
     required this.imagePath,
   });
 
-  // Convert Candidate object to a Map (for storing in Firebase)
+  // Convert Candidate object to a Map
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -25,15 +25,14 @@ class Candidate {
     };
   }
 
-  // Create Candidate object from a Map (when reading from Firebase)
+  // Create Candidate object from a Map
   factory Candidate.fromMap(Map<String, dynamic> map, String documentId) {
     return Candidate(
       id: documentId,
       name: map['name'] ?? '',
       partyName: map['partyName'] ?? '',
-      imagePath: map['imagePath'] ?? '',
       manifesto: map['manifesto'] ?? '',
-
+      imagePath: map['imagePath'] ?? '',
     );
   }
 

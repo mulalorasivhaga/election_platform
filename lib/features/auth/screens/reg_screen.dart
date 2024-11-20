@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/main_navigator.dart';
-import '../services/auth_service.dart';
+import 'package:election_platform/shared/services/auth_services.dart';
 import '../services/email_verification_service.dart';
 import 'package:logger/logger.dart';
+import '../../../shared/providers/service_providers.dart';
 
 
-class RegScreen extends StatefulWidget {
+class RegScreen extends ConsumerStatefulWidget {
   const RegScreen({super.key});
 
   @override
-  State<RegScreen> createState() => _RegScreenState();
+  ConsumerState<RegScreen> createState() => _RegScreenState();
 }
 
-class _RegScreenState extends State<RegScreen> {
+class _RegScreenState extends ConsumerState<RegScreen> {
 
   // Initialize services and controllers
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
+  late final AuthService _authService;
   final _emailVerificationService = EmailVerificationService();
 
   // Logger
@@ -30,6 +32,12 @@ class _RegScreenState extends State<RegScreen> {
     ),
   );
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize AuthService using the provider
+    _authService = ref.read(authServiceProvider);
+  }
 
 // State variables
   bool _passwordVisible = false;
@@ -57,6 +65,7 @@ class _RegScreenState extends State<RegScreen> {
     'Mpumalanga',
     'KwaZulu-Natal',
   ];
+
 
   @override
   void dispose() {

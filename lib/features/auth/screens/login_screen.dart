@@ -1,20 +1,21 @@
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:election_platform/shared/services/auth_services.dart';
+import '../../../shared/providers/service_providers.dart';
 
-import '../services/auth_service.dart';
 
-
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
-/// This is the state class for the LoginScreen widget
-class _LoginScreenState extends State<LoginScreen> {
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
+  late final AuthService _authService;
 
   /// Logger instance
   final Logger _logger = Logger(
@@ -27,13 +28,21 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
+  /// This method initializes the AuthService
+  @override
+  void initState() {
+    super.initState();
+    // Initialize AuthService using the provider
+    _authService = ref.read(authServiceProvider);
+  }
+
   @override
   void dispose() {
     _logger.d('Disposing LoginScreen');
     super.dispose();
   }
 
-
+// variables
   bool _passwordVisible = false;
   bool _isLoading = false;
   String userEmail = '';

@@ -2,7 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logger/logger.dart';
-import '../../home/models/candidate_model.dart';
+import '../../features/home/models/candidate_model.dart';
 
 class CandidateService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

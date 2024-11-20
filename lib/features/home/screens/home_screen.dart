@@ -2,7 +2,7 @@
 
 import 'package:election_platform/shared/widgets/main_navigator.dart';
 import 'package:flutter/material.dart';
-import '../services/candidate_service.dart';
+import '../../../shared/services/candidate_service.dart';
 import '../models/candidate_model.dart';
 import '../widgets/manifesto_dialog.dart';
 import 'package:logger/logger.dart';

@@ -2,13 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:election_platform/features/home/screens/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'config/routes.dart';
 
-import 'config/routes.dart'; //move initial screen to home screen
 
 Future<void> main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-
     // Initialize Firebase first
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -21,6 +20,8 @@ Future<void> main() async {
           measurementId: "G-1Y2JFVL8FL"
       ),
     );
+
+
 
 
     runApp(const ProviderScope (
