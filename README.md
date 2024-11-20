@@ -1,65 +1,66 @@
-# Election Platform
+# Election Platform (PSystem)
 
-A web-based election platform built with Flutter and Firebase, designed to facilitate secure voter registration and management.
+## Overview
+A digital election platform developed in Flutter and Firebase that enables secure online voting, real-time result tracking, and voter verification. This system is designed to enhance accessibility and transparency in the electoral process while maintaining security and data integrity.
 
 ## Features
+- User registration with email verification
+- Secure authentication system
+- Real-time voting and result tracking
+- Provincial-level vote tracking
+- Single vote enforcement per user
+- Responsive design for multi-device support
+- Role-based access control
 
-### Completed Features
-- User Registration System
-    - Email and password authentication
-    - South African ID validation
-    - Provincial selection
-    - Form validation and error handling
-    - Real-time data persistence with Firebase
-- Responsive Design
-    - Mobile-friendly layout
-    - Desktop optimization
-    - Dynamic form adjustments
+## Tech Stack
+### Frontend
+- Flutter
+- Dart
 
-### Technical Stack
-- Frontend: Flutter Web
-- Backend: Firebase
-    - Authentication
-    - Firestore Database
-- State Management: Provider
+### Backend
+- Firebase
+  - Cloud Firestore
+  - Firebase Authentication
+  - Firebase Hosting
 
-## Project Structure
-```
-lib/
-├── features/
-│   ├── auth/
-│   │   ├── models/
-│   │   │   └── user.dart
-│   │   ├── screens/
-│   │   │   └── reg_screen.dart
-│   │   └── services/
-│   │       └── auth_service.dart
-│   └── home/
-│       └── screens/
-│           └── home_screen.dart
-├── shared/
-│   └── widgets/
-│       └── main_navigator.dart
-└── main.dart
-```
+### APIs
+- MailCheck.ai for email verification
+
+## System Architecture
+
+### Role-based Access
+
+#### Registered Voter Access
+- User registration with ID verification
+- Secure voting interface
+- Profile management
+
+#### Guest Access
+- View live poll results
+- Access public election information
+
+### Database Design (Firebase)
+
+#### Collections
+- `users`: Voter information and authentication data
+- `votes`: Individual vote records
+- `election_stats`: Overall election statistics
+- `provincial_stats`: Province-specific statistics
+- `provincial_votes`: Vote distribution by province
 
 ## Setup and Installation
 
 ### Prerequisites
-- Flutter (latest version)
+- Flutter SDK (latest version)
 - Firebase CLI
-- Web browser (Chrome recommended for development)
+- Git
 
-### Firebase Configuration
-1. Create a Firebase project
-2. Enable Authentication and Firestore
-3. Add Firebase configuration to your project
-4. Set up Firestore security rules
+### Installation Steps
 
-### Getting Started
 1. Clone the repository
 ```bash
-git clone [https://github.com/mulalorasivhaga/election_platform]
+git clone [repository-url]
+cd election-platform
 ```
 
 2. Install dependencies
@@ -67,49 +68,329 @@ git clone [https://github.com/mulalorasivhaga/election_platform]
 flutter pub get
 ```
 
-3. Run the application
+3. Configure Firebase
+  - Create a new Firebase project
+  - Enable Authentication and Firestore
+  - Replace the Firebase configuration in `lib/firebase_options.dart`
+
+4. Configure MailCheck.ai
+  - Sign up for a MailCheck.ai account
+  - Update the API key in `lib/features/auth/services/email_verification_service.dart`
+
+5. Run the application
 ```bash
 flutter run -d chrome
 ```
 
+## Core Functionality
+
+### User Registration
+- Email validation through MailCheck.ai
+- ID number verification
+- Province selection
+- Duplicate registration prevention
+
+### Authentication
+- Secure login system
+- Password encryption
+- Session management
+- Role-based access control
+
+### Voting System
+- One-time vote enforcement
+- Real-time vote recording
+- Concurrent voting handling using transactions
+- Province-based vote tracking
+
+### Results Display
+- Real-time result updates
+- Provincial vote distribution
+- Overall election statistics
+- Voter turnout tracking
+
+## Security Features
+- Email verification to prevent disposable email addresses
+- Secure password handling
+- Transaction-based vote recording
+- Input validation and sanitization
+- Protected routes and authenticated access
+
+## Data Models
+
+### User Model
+```dart
+class User {
+  final String uid;
+  final String name;
+  final String surname;
+  final String email;
+  final String idNumber;
+  final String province;
+  final String role;
+  final DateTime createdAt;
+}
+```
+
+### Vote Model
+```dart
+class Vote {
+  final String userId;
+  final String candidateId;
+  final DateTime timestamp;
+  final String province;
+}
+```
+
+## Project Structure
+
+```
+lib/
+├── config/
+│   ├── routes.dart
+│   ├── firebase_config.dart
+│   └── firebase_options.dart
+├── features/
+│   ├── auth/
+│   │   ├── models/
+│   │   ├── screens/
+│   │   └── services/
+│   ├── home/
+│   ├── results/
+│   └── user_dashboard/
+├── shared/
+│   ├── widgets/
+│   ├── services/
+│   └── providers/
+└── main.dart
+```
+
+## image of flow chart
+![Flowchart](assets/project_images/election_platform_flowchart.png)
+
+# Class Diagrams
+## Simplified
+```mermaid
+classDiagram
+    class User {
+        -String uid
+        -String name
+        -String surname
+        -String email
+        -String idNumber
+        -String province
+        -String role
+        -DateTime createdAt
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) User
+        +copyWith(Map) User
+    }
+
+    class Vote {
+        -String userId
+        -String candidateId
+        -DateTime timestamp
+        -String province
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) Vote
+    }
+
+    class Candidate {
+        -String id
+        -String name
+        -String partyName
+        -String manifesto
+        -String imagePath
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) Candidate
+        +copyWith(Map) Candidate
+    }
+
+    class ElectionResults {
+        -List~ElectionCandidate~ candidates
+        -int totalVotes
+        -double votedPercentage
+        -int totalParties
+    }
+
+    class ElectionCandidate {
+        -String id
+        -String name
+        -String party
+        -double votes
+    }
+
+    User "1" -- "*" Vote : casts >
+    Vote "*" -- "1" Candidate : references >
+    Candidate "1" -- "1" ElectionCandidate : transforms to >
+    ElectionResults "1" -- "*" ElectionCandidate : contains >
+```
+
+## Comprehensive
+```mermaid
+classDiagram
+    class User {
+        -String uid
+        -String name
+        -String surname
+        -String email
+        -String idNumber
+        -String province
+        -String role
+        -DateTime createdAt
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) User
+        +copyWith() User
+    }
+
+    class Vote {
+        -String userId
+        -String candidateId
+        -DateTime timestamp
+        -String province
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) Vote
+    }
+
+    class Candidate {
+        -String id
+        -String name
+        -String partyName
+        -String manifesto
+        -String imagePath
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) Candidate
+        +copyWith() Candidate
+    }
+
+    class ElectionResults {
+        -List~ElectionCandidate~ candidates
+        -int totalVotes
+        -double votedPercentage
+        -int totalParties
+    }
+
+    class ElectionCandidate {
+        -String id
+        -String name
+        -String party
+        -double votes
+    }
+
+    class FirestoreInitializer {
+        -FirebaseFirestore _firestore
+        -List~String~ provinces
+        +initializeCollections() Future~void~
+        -_initializeElectionStats() Future~void~
+        -_initializeProvincialStats() Future~void~
+        -_initializeProvincialVotes() Future~void~
+        -_initializeUserCollection() Future~void~
+        +addUser() Future~void~
+        +addVote() Future~void~
+    }
+
+    class AuthService {
+        -FirebaseAuth _auth
+        -FirebaseFirestore _firestore
+        +loginUser(email, password) Future~(User?, String)~
+        +registerUser(email, password, name, surname, idNumber, province) Future~(User?, String)~
+        +logout() Future~void~
+    }
+
+    class EmailVerificationService {
+        -String _baseUrl
+        -String _apiKey
+        -Set~String~ _allowedDomains
+        -_isAllowedDomain(email) bool
+        +verifyEmail(email) Future~(bool, String)~
+    }
+
+    class VoteException {
+        -String message
+        -String? code
+        -dynamic details
+        +toString() String
+        +toMap() Map~String, dynamic~
+        +fromMap(Map) VoteException
+    }
+
+    class CandidateService {
+        -FirebaseFirestore _firestore
+        +getCandidates() Stream~List~Candidate~~
+    }
+
+    class CandidateMapper {
+        +fromCandidate(Candidate, double) ElectionCandidate
+        +createCandidateMap(List~Candidate~, Map) Map~String, ElectionCandidate~
+    }
+
+    class ElectionChartUtils {
+        +getVoterTurnoutSections(double) List~PieChartSectionData~
+        +getCandidateResultsSections(List~ElectionCandidate~) List~PieChartSectionData~
+        +getProvinceBarChartData(Map) BarChartData
+    }
+
+    User "1" -- "1" Vote : casts >
+    Vote "*" -- "1" Candidate : references >
+    Candidate "1" -- "*" ElectionCandidate : maps to >
+    ElectionResults "1" -- "*" ElectionCandidate : contains >
+    FirestoreInitializer -- AuthService : uses >
+    AuthService -- User : manages >
+    AuthService -- EmailVerificationService : uses >
+    CandidateService -- Candidate : manages >
+    CandidateMapper -- Candidate : transforms >
+    CandidateMapper -- ElectionCandidate : creates >
+    ElectionChartUtils -- ElectionCandidate : visualizes >
+
+
+```
+
+## UI Components
+- Responsive navigation system
+- User dashboard
+- Voting interface
+- Results visualization
+- Profile management
+
+## Known Limitations
+- Maximum voter population set to 100 for demonstration
+- Election Commission access not implemented
+- Limited to email-based authentication
+
+## Future Enhancements
+- Implement Election Commission access
+- Add advanced search and filtering capabilities
+- Enhance analytics features
+- Add more sophisticated event handling
+- Implement real ID verification integration
+
 ## Testing
-### Form Validation Tests
-- Email format validation
-- Password strength requirements
-- South African ID number validation
-- Required field validation
+Run the test suite:
+```bash
+flutter test
+```
 
-### Firebase Integration Tests
-- User authentication
-- Data persistence
-- Security rules validation
-
-## Current Progress
-✅ Completed:
-- Basic project setup
-- Firebase integration
-- Registration form UI
-- Form validation
-- User authentication
-- Firestore integration
-
-🔄 In Progress:
-- Security rules implementation
-- Error handling improvements
-- User data management
-
-📝 Planned Features:
-- Login functionality
-- Email verification
-- Password reset
-- User profile management
-- Admin dashboard
+## Development Guidelines
+- Follow Flutter best practices
+- Maintain clean architecture principles
+- Use proper error handling
+- Document all major functions
+- Implement proper logging
 
 ## Contributing
-[Your contribution guidelines here]
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
-[Your license information here]
+This project is part of the INF4027W Systems Development Project II entrance exam.
 
 ## Contact
-[Your contact information here]
+For any queries regarding this project, please contact ["**mulalorasivhaga@icloud.com**"].
+
+## Acknowledgments
+- Flutter team
+- Firebase
+- MailCheck.ai
+- University of Cape Town
