@@ -354,11 +354,6 @@ classDiagram
 - Add more sophisticated event handling
 - Implement real ID verification integration
 
-## Testing
-Run the test suite:
-```bash
-flutter test
-```
 
 ## Development Guidelines
 - Follow Flutter best practices
@@ -367,18 +362,12 @@ flutter test
 - Document all major functions
 - Implement proper logging
 
-## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Commit changes
-4. Push to the branch
-5. Create a Pull Request
-
 ## Contact
 For any queries regarding this project, please contact [**mulalorasivhaga@icloud.com**].
 
 ## Acknowledgments
-- Flutter team
+- Flutter
+- Pub.dev
 - Firebase
 - MailCheck.ai
 - University of Cape Town
