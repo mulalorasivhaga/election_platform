@@ -141,6 +141,17 @@ class Vote {
 }
 ```
 
+### Candidate Model
+```dart
+class Candidate {
+  final String id;
+  final String name;
+  final String partyName;
+  final String manifesto;
+  final String imagePath;
+}
+```
+
 ## Project Structure
 
 ```
@@ -387,7 +398,7 @@ flutter test
 This project is part of the INF4027W Systems Development Project II entrance exam.
 
 ## Contact
-For any queries regarding this project, please contact ["**mulalorasivhaga@icloud.com**"].
+For any queries regarding this project, please contact [**mulalorasivhaga@icloud.com**].
 
 ## Acknowledgments
 - Flutter team
