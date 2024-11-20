@@ -158,8 +158,8 @@ class Candidate {
 lib/
 ├── config/
 │   ├── routes.dart
-│   ├── firebase_config.dart
-│   └── firebase_options.dart
+│   └── firebase_config.dart
+│   
 ├── features/
 │   ├── auth/
 │   │   ├── models/
@@ -240,119 +240,85 @@ classDiagram
 ```mermaid
 classDiagram
     class User {
-        -String uid
-        -String name
-        -String surname
-        -String email
-        -String idNumber
-        -String province
-        -String role
-        -DateTime createdAt
-        +toMap() Map~String, dynamic~
-        +fromMap(Map) User
-        +copyWith() User
+        +String uid
+        +String name
+        +String surname
+        +String email
+        +String idNumber
+        +String province
+        +String role
+        +DateTime createdAt
+        +toMap()
+        +fromMap()
     }
 
     class Vote {
-        -String userId
-        -String candidateId
-        -DateTime timestamp
-        -String province
-        +toMap() Map~String, dynamic~
-        +fromMap(Map) Vote
+        +String userId
+        +String candidateId
+        +DateTime timestamp
+        +String province
+        +toMap()
+        +fromMap()
     }
 
     class Candidate {
-        -String id
-        -String name
-        -String partyName
-        -String manifesto
-        -String imagePath
-        +toMap() Map~String, dynamic~
-        +fromMap(Map) Candidate
-        +copyWith() Candidate
+        +String id
+        +String name
+        +String partyName
+        +String manifesto
+        +String imagePath
+        +toMap()
+        +fromMap()
     }
 
     class ElectionResults {
-        -List~ElectionCandidate~ candidates
-        -int totalVotes
-        -double votedPercentage
-        -int totalParties
+        +List~ElectionCandidate~ candidates
+        +int totalVotes
+        +double votedPercentage
+        +int totalParties
     }
 
-    class ElectionCandidate {
-        -String id
-        -String name
-        -String party
-        -double votes
-    }
-
-    class FirestoreInitializer {
+    class VoteService {
         -FirebaseFirestore _firestore
-        -List~String~ provinces
-        +initializeCollections() Future~void~
-        -_initializeElectionStats() Future~void~
-        -_initializeProvincialStats() Future~void~
-        -_initializeProvincialVotes() Future~void~
-        -_initializeUserCollection() Future~void~
-        +addUser() Future~void~
-        +addVote() Future~void~
+        -FirebaseAuth _auth
+        +watchCandidates()
+        +watchCandidateVoteCounts()
+        +watchTotalVotes()
+        +hasUserVoted()
+        +castVote()
     }
 
     class AuthService {
-        -FirebaseAuth _auth
         -FirebaseFirestore _firestore
-        +loginUser(email, password) Future~(User?, String)~
-        +registerUser(email, password, name, surname, idNumber, province) Future~(User?, String)~
-        +logout() Future~void~
-    }
-
-    class EmailVerificationService {
-        -String _baseUrl
-        -String _apiKey
-        -Set~String~ _allowedDomains
-        -_isAllowedDomain(email) bool
-        +verifyEmail(email) Future~(bool, String)~
-    }
-
-    class VoteException {
-        -String message
-        -String? code
-        -dynamic details
-        +toString() String
-        +toMap() Map~String, dynamic~
-        +fromMap(Map) VoteException
+        -FirebaseAuth _auth
+        +loginUser()
+        +registerUser()
+        +watchTotalVotes()
+        +getCurrentUser()
     }
 
     class CandidateService {
         -FirebaseFirestore _firestore
-        +getCandidates() Stream~List~Candidate~~
+        +getCandidates()
+        +getCandidateById()
+        +addCandidate()
+        +updateCandidate()
+        +deleteCandidate()
+        +getCandidatesByParty()
+        +searchCandidates()
     }
 
-    class CandidateMapper {
-        +fromCandidate(Candidate, double) ElectionCandidate
-        +createCandidateMap(List~Candidate~, Map) Map~String, ElectionCandidate~
+    class EmailVerificationService {
+        +verifyEmail()
     }
 
-    class ElectionChartUtils {
-        +getVoterTurnoutSections(double) List~PieChartSectionData~
-        +getCandidateResultsSections(List~ElectionCandidate~) List~PieChartSectionData~
-        +getProvinceBarChartData(Map) BarChartData
-    }
-
-    User "1" -- "1" Vote : casts >
-    Vote "*" -- "1" Candidate : references >
-    Candidate "1" -- "*" ElectionCandidate : maps to >
-    ElectionResults "1" -- "*" ElectionCandidate : contains >
-    FirestoreInitializer -- AuthService : uses >
-    AuthService -- User : manages >
-    AuthService -- EmailVerificationService : uses >
-    CandidateService -- Candidate : manages >
-    CandidateMapper -- Candidate : transforms >
-    CandidateMapper -- ElectionCandidate : creates >
-    ElectionChartUtils -- ElectionCandidate : visualizes >
-
-
+    VoteService --> Vote : manages
+    VoteService --> Candidate : reads
+    AuthService --> User : manages
+    CandidateService --> Candidate : manages
+    User "1" -- "*" Vote : casts
+    Vote "*" -- "1" Candidate : references
+    ElectionResults --> "*" Candidate : contains
 ```
 
 ## UI Components

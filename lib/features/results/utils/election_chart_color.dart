@@ -19,12 +19,12 @@ class ElectionChartColors {
 
   // Party colors
   static List<Color> partyColors = [
-    Colors.red,
-    Colors.deepOrangeAccent,
-    Colors.blueGrey,
     Colors.blueAccent,
+    Colors.red,
+    Colors.blueGrey,
     Colors.yellow[700]!,
     Colors.green,
+    Colors.deepOrangeAccent,
   ];
 
   // Gradient colors

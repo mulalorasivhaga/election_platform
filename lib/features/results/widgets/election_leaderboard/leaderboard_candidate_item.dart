@@ -112,7 +112,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
         style: TextStyle(
           color: isTopThree
               ? const Color(0xFFCCA43B)
-              : Colors.white,
+              : const Color(0xFF242F40),
           fontWeight: FontWeight.bold,
         ),
       ),
