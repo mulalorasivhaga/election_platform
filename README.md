@@ -40,8 +40,85 @@ A digital election platform developed in Flutter and Firebase that enables secur
 - Access public election information
 
 ### Database Design (Firebase)
+#### Users
+```mermaid
+classDiagram
+    class User {
+        +String uid
+        +String name
+        +String surname
+        +String email
+        +String idNumber
+        +String province
+        +String role
+        +DateTime createdAt
+    }
+```
 
-#### Collections
+#### Candidates
+```mermaid
+classDiagram
+    class Candidate {
+        +String id
+        +String name
+        +String partyName
+        +String manifesto
+        +String imagePath
+    }
+```
+#### Votes
+```mermaid
+classDiagram
+    class Vote {
+        +String userId
+        +String candidateId
+        +DateTime timestamp
+        +String province
+    }
+```
+#### Election Stats
+```mermaid
+classDiagram
+    class ElectionResults {
+        +List~ElectionCandidate~ candidates
+        +int totalVotes
+        +double votedPercentage
+        +int totalParties
+    }
+
+    class ElectionCandidate {
+        +String id
+        +String name
+        +String party
+        +double votes
+    }
+```
+#### Provincial Stats
+```mermaid
+classDiagram
+    class ProvincialStats {
+        +String province
+        +int totalVotes
+        +double votedPercentage
+        +int totalVoters
+    }
+```
+#### Provincial Votes
+```mermaid
+classDiagram
+    class ProvincialVotes {
+        +String province
+        +List~ProvincialCandidate~ candidates
+    }
+
+    class ProvincialCandidate {
+        +String id
+        +String name
+        +String party
+        +double votes
+    }
+```
+### Collections
 - `users`: Voter information and authentication data
 - `votes`: Individual vote records
 - `election_stats`: Overall election statistics
@@ -59,7 +136,7 @@ A digital election platform developed in Flutter and Firebase that enables secur
 
 1. Clone the repository
 ```bash
-git clone [repository-url]
+git clone [https://github.com/mulalorasivhaga/election_platform]
 cd election-platform
 ```
 
@@ -359,9 +436,6 @@ flutter test
 3. Commit changes
 4. Push to the branch
 5. Create a Pull Request
-
-## License
-This project is part of the INF4027W Systems Development Project II entrance exam.
 
 ## Contact
 For any queries regarding this project, please contact [**mulalorasivhaga@icloud.com**].
