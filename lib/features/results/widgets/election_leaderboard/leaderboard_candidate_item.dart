@@ -23,7 +23,7 @@ class LeaderboardCandidateItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: isTopThree
-            ? ElectionChartColors.primary.withOpacity(0.05)
+            ? const Color(0xFF242F40).withOpacity(0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
@@ -93,6 +93,9 @@ class LeaderboardCandidateItem extends StatelessWidget {
 
 /// Returns the vote percentage widget
   Widget _buildVotePercentage() {
+    // Ensure we always have a valid number to display
+    final displayPercentage = candidate.votes.isNaN ? 0.0 : candidate.votes;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -100,16 +103,16 @@ class LeaderboardCandidateItem extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isTopThree
-            ? ElectionChartColors.primary.withOpacity(0.1)
-            : ElectionChartColors.secondary.withOpacity(0.1),
+            ? const Color(0xFFCCA43B).withOpacity(0.1)
+            : const Color(0xFF242F40).withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        '${candidate.votes.toStringAsFixed(2)}%',
+        '${displayPercentage.toStringAsFixed(2)}%',
         style: TextStyle(
           color: isTopThree
-              ? ElectionChartColors.primary
-              : ElectionChartColors.textSecondary,
+              ? const Color(0xFFCCA43B)
+              : Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),

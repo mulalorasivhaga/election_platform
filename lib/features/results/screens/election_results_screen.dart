@@ -1,4 +1,3 @@
-// lib/screens/election_results_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/results_navigator.dart';
@@ -19,43 +18,71 @@ class ElectionResultsScreen extends ConsumerWidget {
       appBar: const DisplayResultsNavigator(),
       body: resultsAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
-          ),
-        ),
-        error: (err, stack) => Center(
-          child: Text(
-            'Error: $err',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        data: (results) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ElectionHeader(
-                    headerText: 'National Election Results',
-                    lastUpdated: DateTime.now(),
-                  ),
-                  const SizedBox(height: 24),
-                  ElectionStatsRow(
-                    candidates: results.candidates,
-                    votedPercentage: results.votedPercentage,
-                    totalVoters: 100,
-                    totalParties: results.totalParties,
-                  ),
-                  const SizedBox(height: 24),
-                  ElectionLeaderboard(
-                    candidates: results.candidates,
-                  ),
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
               ),
+              SizedBox(height: 16),
+              Text(
+                'Loading election results...',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error: ${error.toString()}',
+                style: const TextStyle(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.refresh(electionResultsProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFCCA43B),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        data: (results) => SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ElectionHeader(
+                  headerText: 'National Election Results',
+                  lastUpdated: DateTime.now(),
+                ),
+                const SizedBox(height: 24),
+                ElectionStatsRow(
+                  candidates: results.candidates,
+                  votedPercentage: results.votedPercentage,
+                  totalVoters: 100,
+                  totalParties: results.totalParties,
+                ),
+                const SizedBox(height: 24),
+                ElectionLeaderboard(
+                  candidates: results.candidates,
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
