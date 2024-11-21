@@ -32,32 +32,31 @@ class ElectionResultsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        error: (error, stackTrace) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error: ${error.toString()}',
-                style: const TextStyle(color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(electionResultsProvider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFCCA43B),
+        error: (error, stackTrace) {
+          logger.e('Error displaying results', error: error, stackTrace: stackTrace);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: ${error.toString()}',
+                  style: const TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
                 ),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(electionResultsProvider),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFCCA43B),
+                  ),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        },
         data: (results) => SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -72,7 +71,7 @@ class ElectionResultsScreen extends ConsumerWidget {
                 ElectionStatsRow(
                   candidates: results.candidates,
                   votedPercentage: results.votedPercentage,
-                  totalVoters: 100,
+                  totalVoters: results.totalVotes,
                   totalParties: results.totalParties,
                 ),
                 const SizedBox(height: 24),

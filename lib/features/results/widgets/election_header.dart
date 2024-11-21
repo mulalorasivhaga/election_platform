@@ -26,10 +26,10 @@ class ElectionHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Latest election results as of ${_formatDateTime(lastUpdated)}',
+          'Latest election results: ${_formatDateTime(lastUpdated)}',
           style: const TextStyle(
             fontSize: 16,
-            color: ElectionChartColors.textSecondary,
+            color: ElectionChartColors.textPrimary,
           ),
         ),
       ],
@@ -37,6 +37,6 @@ class ElectionHeader extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}  -  ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

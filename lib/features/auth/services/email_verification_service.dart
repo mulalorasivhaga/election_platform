@@ -38,6 +38,7 @@ class EmailVerificationService {
     return false;
   }
 
+  /// Verify the email address
   Future<(bool isValid, String message)> verifyEmail(String email) async {
     try {
       // Basic format validation first

@@ -1,16 +1,17 @@
 # Election Platform (PSystem)
 
 ## Overview
-A digital election platform developed in Flutter and Firebase that enables secure online voting, real-time result tracking, and voter verification. This system is designed to enhance accessibility and transparency in the electoral process while maintaining security and data integrity.
+A digital election platform enabling secure online voting, real-time result tracking, and voter verification, developed for the UCT INF4027W Systems Development Project II 2025 entrance exam.
 
 ## Features
-- User registration with email verification
+- User registration with email verification (MailCheck.ai)
 - Secure authentication system
 - Real-time voting and result tracking
 - Provincial-level vote tracking
+- Role-based access control (Guest, Voter, Admin)
+- Responsive design
 - Single vote enforcement per user
-- Responsive design for multi-device support
-- Role-based access control
+- Live polling results
 
 ## Tech Stack
 ### Frontend
@@ -27,7 +28,30 @@ A digital election platform developed in Flutter and Firebase that enables secur
 - MailCheck.ai for email verification
 
 ## System Architecture
-
+```mermaid
+graph TD
+    A[Frontend - Flutter Web] --> B[Firebase Auth]
+    A --> C[Cloud Firestore]
+    A --> D[MailCheck.ai API]
+    
+    subgraph Authentication
+    B --> E[User Management]
+    D --> F[Email Verification]
+    end
+    
+    subgraph Database
+    C --> G[Users Collection]
+    C --> H[Votes Collection]
+    C --> I[Election Stats]
+    C --> J[Provincial Stats]
+    end
+    
+    subgraph Services
+    K[AuthService] --> B
+    L[VoteService] --> C
+    M[CandidateService] --> C
+    end
+```
 ### Role-based Access
 
 #### Registered Voter Access
@@ -64,6 +88,8 @@ classDiagram
 
 ## Setup and Installation
 
+### Firebase Credentials
+Access has been granted to the Firebase project to [**(elsjescott@gmail.com**], [**ammarcanani@gmail.com**]. Please contact the project owner for access, [**mulalorasivhaga@icloud.com**].
 ### Prerequisites
 - Flutter SDK (latest version)
 - Firebase CLI

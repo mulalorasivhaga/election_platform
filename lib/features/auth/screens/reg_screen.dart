@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/main_navigator.dart';
@@ -5,6 +7,7 @@ import 'package:election_platform/shared/services/auth_services.dart';
 import '../services/email_verification_service.dart';
 import 'package:logger/logger.dart';
 import '../../../shared/providers/service_providers.dart';
+
 
 
 class RegScreen extends ConsumerStatefulWidget {
@@ -20,6 +23,7 @@ class _RegScreenState extends ConsumerState<RegScreen> {
   final _formKey = GlobalKey<FormState>();
   late final AuthService _authService;
   final _emailVerificationService = EmailVerificationService();
+
 
   // Logger
   final Logger _logger = Logger(
@@ -37,6 +41,7 @@ class _RegScreenState extends ConsumerState<RegScreen> {
     super.initState();
     // Initialize AuthService using the provider
     _authService = ref.read(authServiceProvider);
+
   }
 
 // State variables
@@ -78,7 +83,7 @@ class _RegScreenState extends ConsumerState<RegScreen> {
     if (value == null || value.isEmpty) {
       return 'Please enter an email address';
     }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(value)) {
       return 'Please enter a valid email address';
     }

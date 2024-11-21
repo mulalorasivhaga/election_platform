@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import '../../../shared/providers/service_providers.dart';
-import '../../home/models/candidate_model.dart';
-import 'package:election_platform/shared/services/candidate_service.dart';
+import '../../../shared/providers/stream_providers.dart';
 import '../utils/vote_exception.dart';
 import '../../auth/models/user_model.dart' as auth;
 
@@ -20,16 +18,28 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _idController = TextEditingController();
   final Logger _logger = Logger();
-  final CandidateService _candidateService = CandidateService();
-  List<Candidate> _candidates = [];
-
-  String? _selectedCandidateId;
+  String? _selectedNationalCandidateId;
+  String? _selectedProvincialCandidateId;
+  String _selectedProvince = 'Western Cape';
   bool _isLoading = false;
+
+  final List<String> provinces = [
+    'Western Cape',
+    'Eastern Cape',
+    'Northern Cape',
+    'North West',
+    'Free State',
+    'Gauteng',
+    'Limpopo',
+    'Mpumalanga',
+    'KwaZulu-Natal'
+  ];
 
   @override
   void initState() {
     super.initState();
     _idController.text = widget.currentUser.idNumber;
+    _selectedProvince = widget.currentUser.province;
     _checkVoteStatus();
   }
 
@@ -39,7 +49,7 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
       final hasVoted = await voteService.hasUserVoted(widget.currentUser.uid);
       if (hasVoted && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You have already cast your vote')),
+            const SnackBar(content: Text('You have already cast your vote'))
         );
         Navigator.of(context).pop();
       }
@@ -49,9 +59,11 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
   }
 
   Future<void> _submitVote() async {
-    if (!_formKey.currentState!.validate() || _selectedCandidateId == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedNationalCandidateId == null ||
+        _selectedProvincialCandidateId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields')),
+          const SnackBar(content: Text('Please fill in all required fields'))
       );
       return;
     }
@@ -65,49 +77,27 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
 
       final voteService = ref.read(voteServiceProvider);
 
-      // Wrap the castVote call in a try-catch block
-      try {
-        await voteService.castVote(
-          userId: widget.currentUser.uid,
-          candidateId: _selectedCandidateId!,
-          province: widget.currentUser.province,
-        );
+      await voteService.castVote(
+        userId: widget.currentUser.uid,
+        nationalCandidateId: _selectedNationalCandidateId!,
+        provincialCandidateId: _selectedProvincialCandidateId!,
+        province: _selectedProvince,
+      );
 
-        if (mounted) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Vote cast successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        _logger.e('Error casting vote: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error casting vote: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } on VoteException catch (e) {
       if (mounted) {
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Vote cast successfully!'),
+            backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      _logger.e('Unexpected error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('An unexpected error occurred: ${e.toString()}'),
+            content: Text(e.toString()),
             backgroundColor: Colors.red,
           ),
         );
@@ -119,9 +109,6 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
     }
   }
 
-
-
-  /// This method builds the voting form
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,31 +124,13 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
                 const SizedBox(height: 20),
                 _buildIdField(),
                 const SizedBox(height: 20),
-                _buildCandidateDropdown(),
+                _buildProvinceDropdown(),
+                const SizedBox(height: 20),
+                _buildNationalVotingSection(),
+                const SizedBox(height: 20),
+                _buildProvincialVotingSection(),
                 const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSubmitButton(),
-                    ),
-                  ],
-                ),
+                _buildButtons(),
               ],
             ),
           ),
@@ -170,7 +139,6 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
     );
   }
 
-  /// This method builds the header section
   Widget _buildHeader() {
     return Stack(
       children: [
@@ -191,7 +159,7 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
               ),
               SizedBox(height: 10),
               Text(
-                'Please fill in all required fields',
+                'Vote for both National and Provincial Elections',
                 style: TextStyle(
                   color: Color(0xFFFFFFFF),
                   fontSize: 18,
@@ -205,162 +173,238 @@ class _VotingDialogState extends ConsumerState<VotingDialog> {
           top: 8,
           right: 0,
           child: IconButton(
-            icon: const Icon(
-              Icons.close,
-              color: Color(0xFFCCA43B),
-              size: 30,
-            ),
+            icon: const Icon(Icons.close, color: Color(0xFFCCA43B), size: 30),
             onPressed: () => Navigator.of(context).pop(),
-            padding: EdgeInsets.zero,
           ),
         ),
       ],
     );
   }
 
-  /// This method builds the ID input field
+  /// Build the ID Field
   Widget _buildIdField() {
     return TextFormField(
       controller: _idController,
+      enabled: false,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: 'ID Number',
         labelStyle: const TextStyle(color: Color(0xFFCCA43B)),
-        hintText: 'Enter your 13-digit South African ID number',
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFCCA43B)),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFCCA43B)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFCCA43B), width: 2),
-        ),
-        prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFCCA43B)),
         filled: true,
         fillColor: const Color(0xFF2A3750),
       ),
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(13),
-      ],
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your ID number';
+    );
+  }
+
+  /// Build the Province Dropdown
+  Widget _buildProvinceDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedProvince,
+      dropdownColor: const Color(0xFF2A3750),
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: 'Voting Province',
+        labelStyle: const TextStyle(color: Color(0xFFCCA43B)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFCCA43B)),
+        ),
+        filled: true,
+        fillColor: const Color(0xFF2A3750),
+      ),
+      items: provinces.map((province) {
+        return DropdownMenuItem<String>(
+          value: province,
+          child: Text(province),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() => _selectedProvince = value);
         }
-        if (value.length != 13) {
-          return 'ID number must be 13 digits';
-        }
-        return null;
       },
     );
   }
 
-  /// This method builds the candidate dropdown
-  Widget _buildCandidateDropdown() {
-    return StreamBuilder<List<Candidate>>(
-      stream: _candidateService.getCandidates(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          _logger.e('Error loading candidates: ${snapshot.error}');
-          return const Text('Error loading candidates',
-              style: TextStyle(color: Colors.white));
-        }
+  /// Build the National Voting Section
+  Widget _buildNationalVotingSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final candidatesAsync = ref.watch(candidatesProvider);
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
-          );
-        }
-
-        _candidates = snapshot.data ?? [];
-
-        return DropdownButtonFormField<String>(
-          value: _selectedCandidateId,
-          dropdownColor: const Color(0xFF2A3750),
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: 'Select Party',
-            labelStyle: const TextStyle(color: Color(0xFFCCA43B)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFCCA43B)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'National Vote',
+              style: TextStyle(
+                color: Color(0xFFCCA43B),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFCCA43B)),
+            const SizedBox(height: 10),
+            candidatesAsync.when(
+              loading: () => const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
+              ),
+              error: (error, stack) => Text(
+                'Error loading candidates: $error',
+                style: const TextStyle(color: Colors.red),
+              ),
+              data: (candidates) => DropdownButtonFormField<String>(
+                value: _selectedNationalCandidateId,
+                dropdownColor: const Color(0xFF2A3750),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Select National Party',
+                  labelStyle: const TextStyle(color: Color(0xFFCCA43B)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFCCA43B)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF2A3750),
+                ),
+                items: candidates.map((candidate) {
+                  return DropdownMenuItem<String>(
+                    value: candidate.id,
+                    child: Text(candidate.partyName),
+                  );
+                }).toList(),
+                validator: (value) => value == null ? 'Please select a party' : null,
+                onChanged: (value) {
+                  setState(() => _selectedNationalCandidateId = value);
+                },
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFCCA43B), width: 2),
-            ),
-            prefixIcon: const Icon(Icons.how_to_vote_outlined,
-                color: Color(0xFFCCA43B)),
-            filled: true,
-            fillColor: const Color(0xFF2A3750),
-          ),
-          items: _candidates.map((candidate) {
-            return DropdownMenuItem<String>(
-              value: candidate.id,
-              // Display party name in dropdown
-              child: Text(candidate.partyName,
-                  style: const TextStyle(color: Colors.white)),
-            );
-          }).toList(),
-          validator: (value) => value == null ? 'Please select a party' : null,
-          onChanged: (String? newValue) {
-            setState(() {
-              _selectedCandidateId = newValue;
-            });
-          },
+          ],
         );
       },
     );
   }
 
-  /// This method builds the submit button
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _submitVote,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFCCA43B),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          elevation: 2,
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Text(
-                'Submit Vote',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+  /// Build the Provincial Voting Section
+  Widget _buildProvincialVotingSection() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final candidatesAsync = ref.watch(candidatesProvider);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Provincial Vote',
+              style: TextStyle(
+                color: Color(0xFFCCA43B),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
-      ),
+            ),
+            const SizedBox(height: 10),
+            candidatesAsync.when(
+              loading: () => const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFCCA43B)),
+              ),
+              error: (error, stack) => Text(
+                'Error loading candidates: $error',
+                style: const TextStyle(color: Colors.red),
+              ),
+              data: (candidates) => DropdownButtonFormField<String>(
+                value: _selectedProvincialCandidateId,
+                dropdownColor: const Color(0xFF2A3750),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Select Provincial Party',
+                  labelStyle: const TextStyle(color: Color(0xFFCCA43B)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFCCA43B)),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF2A3750),
+                ),
+                items: candidates.map((candidate) {
+                  return DropdownMenuItem<String>(
+                    value: candidate.id,
+                    child: Text(candidate.partyName),
+                  );
+                }).toList(),
+                validator: (value) => value == null ? 'Please select a party' : null,
+                onChanged: (value) {
+                  setState(() => _selectedProvincialCandidateId = value);
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  /// This method disposes the controller
+  /// Build the Cancel and Submit Vote buttons
+  Widget _buildButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _submitVote,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFCCA43B),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+                : const Text(
+              'Submit Vote',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void dispose() {
-    _logger.i('🔚 Disposing voting dialog');
     _idController.dispose();
     super.dispose();
   }

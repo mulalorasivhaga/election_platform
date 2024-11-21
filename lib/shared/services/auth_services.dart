@@ -56,6 +56,9 @@ class AuthService {
       );
 
       if (userCredential.user != null) {
+        // Send email verification
+        await userCredential.user!.sendEmailVerification();
+
         final user = auth.User(
           uid: userCredential.user!.uid,
           name: name,
@@ -71,7 +74,7 @@ class AuthService {
             .doc(userCredential.user!.uid)
             .set(user.toMap());
 
-        return (user, 'Success');
+        return (user, 'Registration successful. Please verify your email.');
       }
       return (null, 'Registration failed');
     } catch (e) {
@@ -103,5 +106,12 @@ class AuthService {
       return null;
     }
   }
+
+  // Check email verification status
+  Future<bool> isEmailVerified() async {
+    await _auth.currentUser?.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
 }
 

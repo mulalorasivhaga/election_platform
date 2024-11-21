@@ -24,7 +24,21 @@ class VoteService {
         .toList());
   }
 
-  Stream<Map<String, int>> watchCandidateVoteCounts() {
+  Stream<Map<String, Map<String, int>>> watchProvincialVoteCounts() {
+    return _firestore.collection('provincial_votes').snapshots().map((snapshot) {
+      final provincialCounts = <String, Map<String, int>>{};
+      for (var doc in snapshot.docs) {
+        final province = doc.id;
+        final candidateVotes = doc.data()['candidateVotes'] as Map<String, dynamic>;
+        provincialCounts[province] = candidateVotes.map(
+              (key, value) => MapEntry(key, (value as num).toInt()),
+        );
+      }
+      return provincialCounts;
+    });
+  }
+
+  Stream<Map<String, int>> watchNationalVoteCounts() {
     return _firestore.collection('votes').snapshots().map((snapshot) {
       final counts = <String, int>{};
       for (var doc in snapshot.docs) {
@@ -33,13 +47,6 @@ class VoteService {
       }
       return counts;
     });
-  }
-
-  Stream<int> watchTotalVotes() {
-    return _firestore
-        .collection('votes')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
   }
 
   Future<bool> hasUserVoted(String userId) async {
@@ -53,25 +60,14 @@ class VoteService {
 
   Future<void> castVote({
     required String userId,
-    required String candidateId,
+    required String nationalCandidateId,
+    required String provincialCandidateId,
     required String province,
   }) async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
         throw const VoteException('User not authenticated');
-      }
-
-      // Verify user ID matches
-      if (currentUser.uid != userId) {
-        throw const VoteException('Invalid user ID');
-      }
-
-      // Check if collections exist first
-      final statsDoc = await _firestore.collection('election_stats').doc('current').get();
-      if (!statsDoc.exists) {
-        _logger.e('Election stats document does not exist');
-        throw const VoteException('Election configuration error');
       }
 
       await _firestore.runTransaction((transaction) async {
@@ -83,17 +79,11 @@ class VoteService {
           throw const VoteException('User has already voted');
         }
 
-        // Verify candidate exists
-        final candidateRef = _firestore.collection('candidates').doc(candidateId);
-        final candidateDoc = await transaction.get(candidateRef);
-        if (!candidateDoc.exists) {
-          throw const VoteException('Invalid candidate selection');
-        }
-
-        // Create vote document
+        // Create vote document with both national and provincial votes
         transaction.set(userVoteRef, {
           'userId': userId,
-          'candidateId': candidateId,
+          'nationalCandidateId': nationalCandidateId,
+          'provincialCandidateId': provincialCandidateId,
           'province': province,
           'timestamp': FieldValue.serverTimestamp(),
         });
@@ -101,32 +91,42 @@ class VoteService {
         // Update election stats
         transaction.update(_firestore.collection('election_stats').doc('current'), {
           'votedCount': FieldValue.increment(1),
-          'provinceStats.$province.voted': FieldValue.increment(1),
           'lastUpdated': FieldValue.serverTimestamp(),
         });
 
-        // Update provincial stats
-        final provinceRef = _firestore.collection('provincial_election_stats').doc(province);
-        transaction.update(provinceRef, {
-          'totalVotes': FieldValue.increment(1),
-          'lastUpdated': FieldValue.serverTimestamp(),
-        });
-
-        // Update provincial votes
-        final provincialVoteRef = _firestore.collection('provincial_votes').doc(province);
-        transaction.update(provincialVoteRef, {
-          'candidateVotes.$candidateId': FieldValue.increment(1),
-          'totalVotes': FieldValue.increment(1),
-          'lastUpdated': FieldValue.serverTimestamp(),
+        // Mark user as voted
+        transaction.update(_firestore.collection('users').doc(userId), {
+          'hasVoted': true,
         });
       });
 
       _logger.i('Vote successfully cast for user: $userId');
-    } on VoteException {
-      rethrow;
     } catch (e) {
       _logger.e('Error casting vote', error: e);
-      throw VoteException('Failed to cast vote: ${e.toString()}');
+      rethrow;
     }
+  }
+
+  Stream<Map<String, double>> getProvincialVotePercentages(String province) {
+    return _firestore
+        .collection('provincial_votes')
+        .doc(province)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return {};
+
+      final data = doc.data()!;
+      final candidateVotes = data['candidateVotes'] as Map<String, dynamic>;
+      final totalVotes = data['totalVotes'] as num;
+
+      if (totalVotes == 0) return {};
+
+      return candidateVotes.map(
+            (candidateId, votes) => MapEntry(
+          candidateId,
+          (votes as num) / totalVotes * 100,
+        ),
+      );
+    });
   }
 }
