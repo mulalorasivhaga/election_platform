@@ -11,13 +11,13 @@ Future<void> main() async {
     // Initialize Firebase first
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-          apiKey: "AIzaSyDahoPIX8g2FSRfDb73uxgbmlzPI9viMCw",
-          authDomain: "election-platform-52367.firebaseapp.com",
-          projectId: "election-platform-52367",
-          storageBucket: "election-platform-52367.firebaseapp.com",
-          messagingSenderId: "719698721001",
-          appId: "1:719698721001:web:046b4df3c52baeae2f9878",
-          measurementId: "G-1Y2JFVL8FL"
+          apiKey: "API_KEY",
+          authDomain: "AUTH_DOMAIN",
+          projectId: "PROJECT_ID",
+          storageBucket: "STORAGE_BUCKET",
+          messagingSenderId: "MS_ID",
+          appId: "APP_ID",
+          measurementId: "MEASUREMENT_ID"
       ),
     );
 
