@@ -53,12 +53,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDahoPIX8g2FSRfDb73uxgbmlzPI9viMCw',
-    appId: '1:719698721001:web:046b4df3c52baeae2f9878',
-    messagingSenderId: '719698721001',
-    projectId: 'election-platform-52367',
-    authDomain: 'election-platform-52367.firebaseapp.com',
-    storageBucket: 'election-platform-52367.firebasestorage.app',
-    measurementId: 'G-1Y2JFVL8FL',
+    apiKey: 'API_KEY',
+    appId: 'APP_ID',
+    messagingSenderId: 'MS_ID',
+    projectId: 'PROJECT_D',
+    authDomain: 'AUTH_DOMAIN',
+    storageBucket: 'STORAGE_BUCKET',
+    measurementId: 'MEASUREMENT_ID',
   );
 }
