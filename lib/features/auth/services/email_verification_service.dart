@@ -5,7 +5,7 @@ import 'dart:convert';
 
 class EmailVerificationService {
   static const String _baseUrl = 'https://api.mailcheck.ai';
-  static const String _apiKey = '83vHe93CYWPrzeaNCKthPUE080VpXYXP'; // API key
+  static const String _apiKey = 'YOUR_API_KEY'; // API key
 
 
 
